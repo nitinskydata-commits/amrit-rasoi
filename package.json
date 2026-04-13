@@ -1,0 +1,15 @@
+{
+  "name": "amrit-rasoi",
+  "version": "1.0.0",
+  "description": "SBMI E-commerce Platform",
+  "scripts": {
+    "server": "cd backend && npm start",
+    "client": "cd frontend && npm start",
+    "admin": "cd admin && npm start",
+    "start": "concurrently \"npm run server\" \"npm run client\" \"npm run admin\"",
+    "install-all": "cd backend && npm install && cd ../frontend && npm install && cd ../admin && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
