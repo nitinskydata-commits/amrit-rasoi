@@ -1,4 +1,6 @@
 const Product = require('../models/Product');
+const { deleteMultipleImages } = require('../utils/cloudinaryUtils');
+const { isCloudinaryConfigured } = require('../config/cloudinary');
 
 // Parse variants from form data - NEW HELPER FUNCTION
 const parseVariants = (variantsData) => {
@@ -107,10 +109,10 @@ exports.createProduct = async (req, res) => {
     // Handle image uploads
     if (req.files && req.files.length > 0) {
       req.body.images = req.files.map(file => ({
-        url: `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
-        publicId: file.filename
+        url: isCloudinaryConfigured ? file.path : `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
+        publicId: file.filename // ✅ FIXED
       }));
-      console.log('✅ Images processed:', req.body.images);
+      console.log(`✅ Images processed for database (${isCloudinaryConfigured ? 'Cloudinary' : 'Local'}):`, req.body.images);
     }
     
     // Parse variants if provided - NEW CODE
@@ -119,16 +121,31 @@ exports.createProduct = async (req, res) => {
       console.log('✅ Variants parsed:', req.body.variants);
     }
     
+    // Default MRP logic for schema compliance
+    if (!req.body.mrp && req.body.originalPrice) req.body.mrp = req.body.originalPrice;
+    if (!req.body.mrp && req.body.price) req.body.mrp = req.body.price;
+
+    // ✅ CAST STRINGS TO NUMBERS (Crucial for Multer/FormData)
+    const numericFields = ['price', 'originalPrice', 'stock', 'weight', 'mrp'];
+    numericFields.forEach(field => {
+      if (req.body[field]) {
+        req.body[field] = Number(req.body[field]);
+      }
+    });
+
+    // ✅ LOG BEFORE CREATE
+    console.log('📝 FINAL PRODUCT DATA FOR DB:', req.body);
+
     const product = await Product.create(req.body);
     
-    console.log('✅ Product created successfully:', product._id);
+    console.log('✅ Product created successfully with ID:', product._id);
     
     res.status(201).json({
       success: true,
       product
     });
   } catch (error) {
-    console.error('❌ Create product error:', error);
+    console.error('❌ Create product error details:', error);
     res.status(400).json({
       success: false,
       message: error.message
@@ -153,19 +170,11 @@ exports.updateProduct = async (req, res) => {
     
     // Handle image uploads
     if (req.files && req.files.length > 0) {
-      const newImages = req.files.map(file => ({
-        url: `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
-        publicId: file.filename
+      req.body.images = req.files.map(file => ({
+        url: isCloudinaryConfigured ? file.path : `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
+        publicId: file.filename // ✅ FIXED
       }));
-      
-      // If keepExisting is true, append new images, otherwise replace
-      if (req.body.keepExistingImages === 'true') {
-        req.body.images = [...product.images, ...newImages];
-      } else {
-        req.body.images = newImages;
-      }
-      
-      console.log('✅ Images updated:', req.body.images);
+      console.log(`✅ Images processed for database (${isCloudinaryConfigured ? 'Cloudinary' : 'Local'}):`, req.body.images);
     }
     
     // Parse variants if provided - NEW CODE
@@ -199,11 +208,9 @@ exports.deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found'
-      });
+    if (product.images && product.images.length > 0) {
+      const publicIds = product.images.map(img => img.publicId || img.public_id);
+      await deleteMultipleImages(publicIds);
     }
     
     await product.deleteOne();

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getAllSubscribers, deleteSubscriber } from '../utils/api';
 import { FaTrash, FaEnvelope, FaDownload } from 'react-icons/fa';
 import './Newsletter.css';
 
@@ -15,10 +15,7 @@ const Newsletter = () => {
 
   const fetchSubscribers = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const { data } = await axios.get('/api/v1/newsletter/admin/all', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const { data } = await getAllSubscribers();
       if (data.success) {
         setSubscribers(data.subscribers);
         setStats(data.stats);
@@ -37,10 +34,7 @@ const Newsletter = () => {
     }
 
     try {
-      const token = localStorage.getItem('adminToken');
-      await axios.delete(`/api/v1/newsletter/admin/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await deleteSubscriber(id);
       alert('Subscriber deleted successfully!');
       fetchSubscribers();
     } catch (error) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getAllTestimonials, createTestimonial, updateTestimonial, deleteTestimonial } from '../utils/api';
 import { FaPlus, FaEdit, FaTrash, FaStar } from 'react-icons/fa';
 import './Testimonials.css';
 
@@ -25,10 +25,7 @@ const Testimonials = () => {
 
   const fetchTestimonials = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const { data } = await axios.get('/api/v1/testimonials/admin/all', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const { data } = await getAllTestimonials();
       if (data.success) {
         setTestimonials(data.testimonials);
       }
@@ -58,8 +55,6 @@ const Testimonials = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const token = localStorage.getItem('adminToken');
     const submitData = new FormData();
 
     Object.keys(formData).forEach(key => {
@@ -72,20 +67,10 @@ const Testimonials = () => {
 
     try {
       if (editingId) {
-        await axios.put(`/api/v1/testimonials/${editingId}`, submitData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        });
+        await updateTestimonial(editingId, submitData);
         alert('Testimonial updated successfully!');
       } else {
-        await axios.post('/api/v1/testimonials', submitData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        });
+        await createTestimonial(submitData);
         alert('Testimonial created successfully!');
       }
 
@@ -117,10 +102,7 @@ const Testimonials = () => {
     }
 
     try {
-      const token = localStorage.getItem('adminToken');
-      await axios.delete(`/api/v1/testimonials/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await deleteTestimonial(id);
       alert('Testimonial deleted successfully!');
       fetchTestimonials();
     } catch (error) {

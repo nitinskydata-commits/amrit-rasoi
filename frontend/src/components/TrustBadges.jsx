@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 import './TrustBadges.css';
 
 const TrustBadges = () => {
@@ -10,7 +11,7 @@ const TrustBadges = () => {
   useEffect(() => {
     const fetchBadges = async () => {
       try {
-        const { data } = await axios.get('/api/v1/badges');
+        const { data } = await axios.get(`${API_BASE_URL}/badges`);
         if (data.success) {
           setBadges(data.badges);
         }

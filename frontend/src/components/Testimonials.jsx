@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 import './Testimonials.css';
 
 const Testimonials = () => {
@@ -10,7 +11,7 @@ const Testimonials = () => {
   useEffect(() => {
     const fetchTestimonials = async () => {
       try {
-        const { data } = await axios.get('/api/v1/testimonials');
+        const { data } = await axios.get(`${API_BASE_URL}/testimonials`);
         if (data.success) {
           setTestimonials(data.testimonials);
         }

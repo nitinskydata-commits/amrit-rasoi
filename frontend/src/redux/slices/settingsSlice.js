@@ -1,14 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-
-const API_URL = 'http://localhost:5000/api/v1';
+import { API_BASE_URL } from '../../config/api';
 
 // Get settings
 export const getSettings = createAsyncThunk(
   'settings/get',
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get(`${API_URL}/settings`);
+      const { data } = await axios.get(`${API_BASE_URL}/settings`);
       return data.settings;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch settings');

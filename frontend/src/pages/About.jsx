@@ -1,27 +1,27 @@
 import React from 'react';
-import { useSettings } from '../context/SettingsContext';
+import { useSelector } from 'react-redux';
 import './About.css';
 
 const About = () => {
-  const { settings } = useSettings();
+  const { settings } = useSelector((state) => state.settings);
 
   return (
     <div className="about-page">
       <div className="about-header">
-        <h1>About SBMI - Amrit Rasoi</h1>
-        <p>Your Trusted Source for Authentic Indian Spices</p>
+        <h1>About {settings?.siteName || 'SBMI - Amrit Rasoi'}</h1>
+        <p>{settings?.tagline || 'Your Trusted Source for Authentic Indian Spices'}</p>
       </div>
 
       <div className="container">
         <section className="about-section">
           <h2>Our Story</h2>
           <p>
-            Shree Bhanwal Mata Industries (SBMI) - Amrit Rasoi has been serving authentic Indian spices
+            {settings?.siteName || 'SBMI - Amrit Rasoi'} has been serving authentic Indian spices
             and food products since its inception. We are committed to bringing the finest quality spices
             from across India directly to your kitchen.
           </p>
           <p>
-            Located in Baliali, Punjab, we take pride in maintaining traditional methods while embracing
+            Located in {settings?.companyAddress || '[Our Business Address]'}, we take pride in maintaining traditional methods while embracing
             modern quality standards. Every product that leaves our facility carries the legacy of
             generations of spice expertise.
           </p>
@@ -60,9 +60,9 @@ const About = () => {
         <section className="about-section">
           <h2>Contact Information</h2>
           <div className="contact-info-about">
-            <p><strong>Address:</strong> {settings.address || 'RICCO, Sikar, Rajasthan, India'}</p>
-            <p><strong>Phone:</strong> {settings.supportPhone || '+91 8619706042'}</p>
-            <p><strong>Email:</strong> {settings.supportEmail || 'shreebhanwalmataindustries@gmail.com'}</p>
+            <p><strong>Address:</strong> {settings?.companyAddress || '[Your Business Address Here]'}</p>
+            <p><strong>Phone:</strong> {settings?.supportPhone || '+91 xxxxx xxxxx'}</p>
+            <p><strong>Email:</strong> {settings?.supportEmail || 'admin@example.com'}</p>
           </div>
         </section>
       </div>

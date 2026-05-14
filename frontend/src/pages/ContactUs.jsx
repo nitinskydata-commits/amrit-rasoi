@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { useSettings } from '../context/SettingsContext';
-import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaClock, FaWhatsapp } from 'react-icons/fa';
+import { useSelector } from 'react-redux';
+import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaClock } from 'react-icons/fa';
 import './ContactUs.css';
 
 const ContactUs = () => {
-  const { settings } = useSettings();
+  const { settings } = useSelector((state) => state.settings);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -42,21 +42,12 @@ const ContactUs = () => {
           {/* Contact Information */}
           <div className="contact-info">
             <h2>Get In Touch</h2>
-            
+
             <div className="info-card">
               <FaPhone className="info-icon" />
               <div>
                 <h3>Phone</h3>
-                <p>{settings.supportPhone || '+91 98765 43210'}</p>
-                <p>{settings.supportPhone2 || '+91 98765 43211'}</p>
-              </div>
-            </div>
-
-            <div className="info-card">
-              <FaWhatsapp className="info-icon whatsapp" />
-              <div>
-                <h3>WhatsApp</h3>
-                <p>{settings.whatsappNumber || '+91 98765 43210'}</p>
+                <p>{settings?.supportPhone || 'Contact details in Admin'}</p>
               </div>
             </div>
 
@@ -64,8 +55,7 @@ const ContactUs = () => {
               <FaEnvelope className="info-icon" />
               <div>
                 <h3>Email</h3>
-                <p>{settings.supportEmail || 'support@sbmi.com'}</p>
-                <p>{settings.businessEmail || 'business@sbmi.com'}</p>
+                <p>{settings?.supportEmail || 'admin@example.com'}</p>
               </div>
             </div>
 
@@ -73,9 +63,7 @@ const ContactUs = () => {
               <FaMapMarkerAlt className="info-icon" />
               <div>
                 <h3>Address</h3>
-                <p>{settings.address || 'Shree Bhanwal Mata Industries'}</p>
-                <p>{settings.city || 'Baliali'}, {settings.state || 'Punjab'}</p>
-                <p>{settings.pincode || '144211'}</p>
+                <p>{settings?.companyAddress || '[Your Business Address Here]'}</p>
               </div>
             </div>
 
@@ -83,7 +71,7 @@ const ContactUs = () => {
               <FaClock className="info-icon" />
               <div>
                 <h3>Business Hours</h3>
-                <p>Monday - Saturday: 9:00 AM - 6:00 PM</p>
+                <p>Monday - Saturday: 9:00 AM - 7:00 PM</p>
                 <p>Sunday: Closed</p>
               </div>
             </div>
@@ -118,7 +106,7 @@ const ContactUs = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  placeholder="your.email@example.com"
+                  placeholder="your.email@gmail.com"
                 />
               </div>
 
@@ -129,7 +117,7 @@ const ContactUs = () => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="+91 98765 43210"
+                  placeholder="+91 xxxxx xxxxx"
                 />
               </div>
 

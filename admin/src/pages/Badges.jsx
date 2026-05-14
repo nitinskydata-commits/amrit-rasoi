@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getAllBadges, createBadge, updateBadge, deleteBadge } from '../utils/api';
 import { FaPlus, FaEdit, FaTrash, FaArrowUp, FaArrowDown } from 'react-icons/fa';
 import './Badges.css';
 
@@ -24,10 +24,7 @@ const Badges = () => {
 
   const fetchBadges = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const { data } = await axios.get('/api/v1/badges/admin/all', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const { data } = await getAllBadges();
       if (data.success) {
         setBadges(data.badges);
       }
@@ -56,8 +53,6 @@ const Badges = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const token = localStorage.getItem('adminToken');
     const submitData = new FormData();
 
     Object.keys(formData).forEach(key => {
@@ -70,20 +65,10 @@ const Badges = () => {
 
     try {
       if (editingId) {
-        await axios.put(`/api/v1/badges/${editingId}`, submitData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        });
+        await updateBadge(editingId, submitData);
         alert('Badge updated successfully!');
       } else {
-        await axios.post('/api/v1/badges', submitData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        });
+        await createBadge(submitData);
         alert('Badge created successfully!');
       }
 
@@ -114,10 +99,7 @@ const Badges = () => {
     }
 
     try {
-      const token = localStorage.getItem('adminToken');
-      await axios.delete(`/api/v1/badges/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await deleteBadge(id);
       alert('Badge deleted successfully!');
       fetchBadges();
     } catch (error) {

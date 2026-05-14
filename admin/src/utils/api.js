@@ -1,10 +1,9 @@
 import axios from 'axios';
-
-const API_URL = 'http://localhost:5000/api/v1';
+import { API_BASE_URL } from '../config/api';
 
 // Create axios instance
 const api = axios.create({
-  baseURL: API_URL
+  baseURL: API_BASE_URL
 });
 
 // Add token to requests
@@ -31,14 +30,14 @@ api.interceptors.request.use(
 
 // Auth APIs
 export const loginAdmin = (credentials) => api.post('/login', credentials);
-export const getProfile = () => api.get('/profile');
+export const getProfile = () => api.get('/me');
 
 // Dashboard APIs
 export const getDashboardStats = () => api.get('/admin/dashboard');
 export const getSalesAnalytics = (period) => api.get(`/admin/analytics/sales?period=${period}`);
 
 // Product APIs - FIXED
-export const getAllProducts = (params) => api.get('/products', { params });
+export const getAllProducts = (params) => api.get('/admin/products', { params });
 export const createProduct = (data) => api.post('/admin/product/new', data);
 export const updateProduct = (id, data) => api.put(`/admin/product/${id}`, data);
 export const deleteProduct = (id) => api.delete(`/admin/product/${id}`);
@@ -84,8 +83,24 @@ export const deleteAd = (id) => api.delete(`/admin/ad/${id}`);
 export const toggleAdStatus = (id) => api.put(`/admin/ad/${id}/toggle`);
 
 // Settings APIs
-export const getSettings = () => api.get('/settings');
+export const getSettings = () => api.get('/admin/settings');
 export const updateSettings = (data) => api.put('/admin/settings', data);
 export const changeAdminPassword = (data) => api.put('/admin/change-password', data);
+
+// Testimonial APIs
+export const getAllTestimonials = () => api.get('/admin/testimonials');
+export const createTestimonial = (data) => api.post('/admin/testimonials', data);
+export const updateTestimonial = (id, data) => api.put(`/admin/testimonials/${id}`, data);
+export const deleteTestimonial = (id) => api.delete(`/admin/testimonials/${id}`);
+
+// Newsletter APIs
+export const getAllSubscribers = () => api.get('/admin/newsletter');
+export const deleteSubscriber = (id) => api.delete(`/admin/newsletter/${id}`);
+
+// Badge APIs
+export const getAllBadges = () => api.get('/admin/badges');
+export const createBadge = (data) => api.post('/admin/badges', data);
+export const updateBadge = (id, data) => api.put(`/admin/badges/${id}`, data);
+export const deleteBadge = (id) => api.delete(`/admin/badges/${id}`);
 
 export default api;

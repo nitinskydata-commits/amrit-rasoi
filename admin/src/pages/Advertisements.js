@@ -260,6 +260,7 @@ const Advertisements = () => {
                   required
                 >
                   <option value="home-top">Home Top</option>
+                  <option value="home-middle">Home Middle</option>
                   <option value="home-sidebar">Home Sidebar</option>
                   <option value="product-banner">Product Banner</option>
                   <option value="checkout-banner">Checkout Banner</option>

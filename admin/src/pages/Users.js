@@ -5,6 +5,7 @@ import { FaTrash, FaUserShield } from 'react-icons/fa';
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const currentAdmin = JSON.parse(localStorage.getItem('adminUser') || '{}');
 
   useEffect(() => {
     fetchUsers();
@@ -49,7 +50,12 @@ const Users = () => {
     <div>
       <div className="page-header">
         <h1>Users Management</h1>
-        <p>Manage registered users and their roles</p>
+        <p>Dedicated user management hub. Only the super-admin can promote regular users to admin.</p>
+        {!currentAdmin?.isSuperAdmin && (
+          <div className="alert alert-warning">
+            Role changes are hidden for this admin account. Only the dedicated super-admin may make users admin.
+          </div>
+        )}
       </div>
 
       <div className="card">
@@ -72,15 +78,21 @@ const Users = () => {
                   <td>{user.email}</td>
                   <td>{user.phone || 'N/A'}</td>
                   <td>
-                    <select
-                      className={`badge ${user.role === 'admin' ? 'badge-danger' : 'badge-info'}`}
-                      value={user.role}
-                      onChange={(e) => handleRoleChange(user._id, e.target.value)}
-                      style={{ border: 'none', cursor: 'pointer' }}
-                    >
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
-                    </select>
+                    {currentAdmin?.isSuperAdmin ? (
+                      <select
+                        className={`badge ${user.role === 'admin' ? 'badge-danger' : 'badge-info'}`}
+                        value={user.role}
+                        onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                        style={{ border: 'none', cursor: 'pointer' }}
+                      >
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    ) : (
+                      <span className={`badge ${user.role === 'admin' ? 'badge-danger' : 'badge-info'}`}>
+                        {user.role}
+                      </span>
+                    )}
                   </td>
                   <td>{new Date(user.createdAt).toLocaleDateString()}</td>
                   <td>

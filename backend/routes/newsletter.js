@@ -31,19 +31,7 @@ router.post('/subscribe', async (req, res) => {
 });
 
 
-// ✅ ADMIN ROUTE
-router.get(
-  '/admin/all',
-  isAuthenticatedUser,
-  authorizeRoles('admin'),
-  async (req, res) => {
-    try {
-      const subscribers = await Newsletter.find();
-      res.json({ success: true, subscribers });
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-);
+// ✅ ADMIN ROUTE - MOVED TO adminRoutes.js
+// router.get('/admin/all', ...);
 
 module.exports = router;

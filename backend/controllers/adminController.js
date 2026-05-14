@@ -461,22 +461,42 @@ exports.getSingleUser = async (req, res) => {
 // Update user role (admin)
 exports.updateUserRole = async (req, res) => {
   try {
+    if (!req.user?.isSuperAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the dedicated super-admin can change user roles.'
+      });
+    }
+
+    const { role } = req.body;
+    if (!['user', 'admin'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid role. Only user or admin roles are permitted.'
+      });
+    }
+
     const user = await User.findById(req.params.id);
-    
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
-    
-    user.role = req.body.role;
+
+    user.role = role;
+    if (role === 'admin' && !user.isSuperAdmin) {
+      user.isSuperAdmin = false;
+    }
     await user.save();
-    
+
+    const sanitizedUser = user.toObject();
+    delete sanitizedUser.password;
+
     res.status(200).json({
       success: true,
       message: 'User role updated successfully',
-      user
+      user: sanitizedUser
     });
   } catch (error) {
     res.status(500).json({

@@ -84,7 +84,8 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role
+        role: user.role,
+        isSuperAdmin: user.isSuperAdmin || false
       }
     });
   } catch (error) {
@@ -254,10 +255,10 @@ exports.getAddresses = async (req, res) => {
 exports.addAddress = async (req, res) => {
   console.log('🔵 ADD ADDRESS REQUEST:', req.body);
   try {
-    const { name, phone, address, city, state, pincode, landmark } = req.body;
+    const { fullName, phone, addressLine1, addressLine2, city, state, pincode, addressType, isDefault } = req.body;
 
     // Validation
-    if (!name || !phone || !address || !city || !state || !pincode) {
+    if (!fullName || !phone || !addressLine1 || !city || !state || !pincode) {
       return res.status(400).json({
         success: false,
         message: 'Please provide all required fields'
@@ -266,25 +267,26 @@ exports.addAddress = async (req, res) => {
 
     const user = await User.findById(req.user.id);
 
-    // If this is the first address, make it default
-    const isDefault = user.addresses.length === 0;
-
-    // If new address is set as default, remove default from others
+    // If setting as default, remove default from others
     if (isDefault) {
       user.addresses.forEach(addr => {
         addr.isDefault = false;
       });
     }
 
+    // If this is the first address and not explicitly set as default, make it default
+    const makeDefault = user.addresses.length === 0 && !isDefault ? true : isDefault;
+
     user.addresses.push({
-      name,
+      fullName,
       phone,
-      address,
+      addressLine1,
+      addressLine2: addressLine2 || '',
       city,
       state,
       pincode,
-      landmark,
-      isDefault
+      addressType: addressType || 'Home',
+      isDefault: makeDefault
     });
 
     await user.save();

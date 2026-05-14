@@ -16,7 +16,7 @@ const advertisementSchema = new mongoose.Schema({
   link: String,
   position: {
     type: String,
-    enum: ['home-top', 'home-sidebar', 'product-banner', 'checkout-banner', 'footer'],
+    enum: ['home-top', 'home-middle', 'home-sidebar', 'product-banner', 'checkout-banner', 'footer'],
     required: true
   },
   startDate: {

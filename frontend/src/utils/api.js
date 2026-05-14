@@ -1,16 +1,13 @@
 import axios from 'axios';
-
-const API_URL = 'http://localhost:5000/api/v1';
+import { API_BASE_URL } from '../config/api';
 
 // Settings
 export const getSettings = async () => {
   try {
-    console.log('🔄 Fetching settings from:', `${API_URL}/settings`);
-    const response = await axios.get(`${API_URL}/settings`);
-    console.log('✅ Settings response:', response.data);
+    const response = await axios.get(`${API_BASE_URL}/settings`);
     return response.data;
   } catch (error) {
-    console.error('❌ Error fetching settings:', error.response?.data || error.message);
+    console.error('Error fetching settings:', error.response?.data || error.message);
     return { success: false, settings: null };
   }
 };
@@ -18,7 +15,7 @@ export const getSettings = async () => {
 // Products
 export const getAllProducts = async (params) => {
   try {
-    const response = await axios.get(`${API_URL}/products`, { params });
+    const response = await axios.get(`${API_BASE_URL}/products`, { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -28,7 +25,7 @@ export const getAllProducts = async (params) => {
 
 export const getProductById = async (id) => {
   try {
-    const response = await axios.get(`${API_URL}/product/${id}`);
+    const response = await axios.get(`${API_BASE_URL}/product/${id}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching product:', error);
@@ -36,4 +33,14 @@ export const getProductById = async (id) => {
   }
 };
 
-export default { getSettings, getAllProducts, getProductById };
+export const getActiveAdsByPosition = async (position) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/ads/${position}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching ads for ${position}:`, error);
+    return { success: false, ads: [] };
+  }
+};
+
+export default { getSettings, getAllProducts, getProductById, getActiveAdsByPosition };

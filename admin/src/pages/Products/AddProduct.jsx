@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
 import './AddProduct.css';
 
 const AddProduct = () => {
@@ -69,7 +70,7 @@ const AddProduct = () => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('adminToken');
       
       const formDataToSend = new FormData();
       
@@ -94,7 +95,7 @@ const AddProduct = () => {
       };
 
       const { data } = await axios.post(
-        'http://localhost:5000/api/v1/admin/product/new',
+        `${API_BASE_URL}/admin/product/new`,
         formDataToSend,
         config
       );

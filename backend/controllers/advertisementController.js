@@ -83,6 +83,14 @@ exports.createAd = async (req, res) => {
   try {
     req.body.createdBy = req.user.id;
     
+    // Handle ad image if uploaded
+    if (req.file) {
+      req.body.image = {
+        url: req.file.path,
+        public_id: req.file.filename
+      };
+    }
+    
     const ad = await Advertisement.create(req.body);
     
     res.status(201).json({
@@ -108,6 +116,14 @@ exports.updateAd = async (req, res) => {
         success: false,
         message: 'Advertisement not found'
       });
+    }
+    
+    // Handle image update
+    if (req.file) {
+      req.body.image = {
+        url: req.file.path,
+        public_id: req.file.filename
+      };
     }
     
     ad = await Advertisement.findByIdAndUpdate(

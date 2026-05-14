@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import { API_BASE_URL } from '../config/api';
 import './Newsletter.css';
 
 const Newsletter = () => {
@@ -22,7 +23,7 @@ const Newsletter = () => {
     setMessage('');
 
     try {
-      const { data } = await axios.post('/api/v1/newsletter/subscribe', { email });
+      const { data } = await axios.post(`${API_BASE_URL}/newsletter/subscribe`, { email });
       
       if (data.success) {
         setMessage(data.message || 'Successfully subscribed!');

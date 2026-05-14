@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-
-const API_URL = 'http://localhost:5000/api/v1';
+import { API_BASE_URL } from '../../config/api';
 
 // Configure axios to include credentials
 axios.defaults.withCredentials = true;
@@ -30,7 +29,7 @@ export const sendOTP = createAsyncThunk(
   'auth/sendOTP',
   async (phone, { rejectWithValue }) => {
     try {
-      const { data } = await axios.post(`${API_URL}/otp/send`, { phone });
+      const { data } = await axios.post(`${API_BASE_URL}/otp/send`, { phone });
       return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to send OTP');
@@ -43,7 +42,7 @@ export const verifyOTP = createAsyncThunk(
   'auth/verifyOTP',
   async ({ phone, otp }, { rejectWithValue }) => {
     try {
-      const { data } = await axios.post(`${API_URL}/otp/verify`, { phone, otp });
+      const { data } = await axios.post(`${API_BASE_URL}/otp/verify`, { phone, otp });
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('token', data.token);
       return data;
@@ -58,7 +57,7 @@ export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
-      const { data } = await axios.post(`${API_URL}/register`, userData);
+      const { data } = await axios.post(`${API_BASE_URL}/register`, userData);
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('token', data.token);
       return data;
@@ -73,7 +72,7 @@ export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      const { data } = await axios.post(`${API_URL}/login`, { email, password });
+      const { data } = await axios.post(`${API_BASE_URL}/login`, { email, password });
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('token', data.token);
       return data;
@@ -86,7 +85,7 @@ export const login = createAsyncThunk(
 // Logout
 export const logout = createAsyncThunk('auth/logout', async () => {
   try {
-    await axios.get(`${API_URL}/logout`);
+    await axios.get(`${API_BASE_URL}/logout`);
   } catch (error) {
     console.log('Logout error:', error);
   }
@@ -99,7 +98,7 @@ export const getUserProfile = createAsyncThunk(
   'auth/getUserProfile',
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get(`${API_URL}/me`);
+      const { data } = await axios.get(`${API_BASE_URL}/me`);
       return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch profile');
@@ -112,7 +111,7 @@ export const updateProfile = createAsyncThunk(
   'auth/updateProfile',
   async (userData, { rejectWithValue }) => {
     try {
-      const { data } = await axios.put(`${API_URL}/me/update`, userData);
+      const { data } = await axios.put(`${API_BASE_URL}/me/update`, userData);
       localStorage.setItem('user', JSON.stringify(data.user));
       return data;
     } catch (error) {
@@ -126,7 +125,7 @@ export const addAddress = createAsyncThunk(
   'auth/addAddress',
   async (addressData, { rejectWithValue }) => {
     try {
-      const { data } = await axios.post(`${API_URL}/address`, addressData);
+      const { data } = await axios.post(`${API_BASE_URL}/address`, addressData);
       return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to add address');
@@ -139,7 +138,7 @@ const authSlice = createSlice({
   initialState: {
     user: JSON.parse(localStorage.getItem('user')) || null,
     token: localStorage.getItem('token') || null,
-    isAuthenticated: !!localStorage.getItem('token'),
+    isAuthenticated: !!localStorage.getItem('token') && localStorage.getItem('token').length > 10,
     loading: false,
     error: null,
     otpSent: false

@@ -13,12 +13,12 @@ const Header = () => {
   const { isAuthenticated, user } = useSelector(state => state.auth);
   const { cart } = useSelector(state => state.cart);
   const { addresses } = useSelector(state => state.address);
+  const { settings } = useSelector(state => state.settings); // ✅ Use Redux settings
   
   const [searchQuery, setSearchQuery] = useState('');
   const [searchCategory, setSearchCategory] = useState('all');
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [settings, setSettings] = useState(null);
 
   const cartItemsCount = cart?.items?.length || 0;
 
@@ -27,20 +27,6 @@ const Header = () => {
       dispatch(fetchAddresses());
     }
   }, [dispatch, isAuthenticated]);
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const data = await getSettings();
-        if (data?.settings) {
-          setSettings(data.settings);
-        }
-      } catch (error) {
-        console.error('❌ Error fetching settings:', error);
-      }
-    };
-    fetchSettings();
-  }, []);
 
   const defaultAddress = addresses?.find(addr => addr.isDefault) || addresses?.[0];
 
@@ -79,12 +65,12 @@ const Header = () => {
                       e.target.src = '/logo.png';
                     }}
                   />
-                  <span className="logo-text">{settings.siteName || 'SBMI - Shree Bhanwal Mata Industries'}</span>
+                  <span className="logo-text">{settings.siteName || 'SBMI'}</span>
                 </>
               ) : (
                 <>
                   <img src="/logo.png" alt="SBMI" />
-                  <span className="logo-text">{settings?.siteName || 'SBMI - Shree Bhanwal Mata Industries'}</span>
+                  <span className="logo-text">{settings?.siteName || 'SBMI'}</span>
                 </>
               )}
             </Link>
@@ -189,7 +175,6 @@ const Header = () => {
         <div className="container">
           <Link to="/" className="nav-link">🏠 Home</Link>
           <Link to="/deals" className="nav-link deals">🔥 Today's Deals</Link>
-          <Link to="/best-sellers" className="nav-link">⭐ Best Sellers</Link>
           <Link to="/new-arrivals" className="nav-link">🆕 New Arrivals</Link>
           <Link to="/about" className="nav-link">ℹ️ About Us</Link>
           <Link to="/contact" className="nav-link">📞 Contact</Link>

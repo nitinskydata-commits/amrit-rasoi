@@ -20,10 +20,11 @@ const createAdmin = async () => {
     const adminExists = await User.findOne({ email: 'admin@sbmi.com' });
     
     if (adminExists) {
-      // Update existing user to admin
+      // Update existing user to admin and keep super-admin privileges
       adminExists.role = 'admin';
+      adminExists.isSuperAdmin = true;
       await adminExists.save();
-      console.log('✅ Existing user updated to admin!');
+      console.log('✅ Existing user updated to admin (super-admin)');
     } else {
       // Create new admin user
       const admin = await User.create({
@@ -31,7 +32,8 @@ const createAdmin = async () => {
         email: 'admin@sbmi.com',
         password: 'admin123',
         phone: '9876543210',
-        role: 'admin'
+        role: 'admin',
+        isSuperAdmin: true
       });
       console.log('✅ Admin user created successfully!');
     }

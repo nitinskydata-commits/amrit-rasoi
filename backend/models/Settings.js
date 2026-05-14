@@ -10,7 +10,12 @@ const settingsSchema = new mongoose.Schema({
     type: String,
     default: 'Premium Quality Spices'
   },
+  // branding links
   companyLogo: {
+    public_id: String,
+    url: String
+  },
+  favIcon: {
     public_id: String,
     url: String
   },
@@ -34,6 +39,28 @@ const settingsSchema = new mongoose.Schema({
     twitter: String,
     youtube: String,
     linkedin: String
+  },
+
+  // SEO & Analytics
+  metaTitle: {
+    type: String,
+    default: 'SBMI - Shree Bhanwal Mata Industries'
+  },
+  metaDescription: {
+    type: String,
+    default: 'Premium Quality Spices and Food Products'
+  },
+  metaKeywords: String,
+  googleAnalyticsId: String,
+
+  // UI Content
+  footerText: {
+    type: String,
+    default: '© 2024 SBMI - Shree Bhanwal Mata Industries. All Rights Reserved.'
+  },
+  maintenanceMode: {
+    type: Boolean,
+    default: false
   },
   
   // Payment Settings

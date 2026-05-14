@@ -33,9 +33,11 @@
 }
 
 .logo img {
-  width: 35px;
-  height: 35px;
-  object-fit: contain;
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid var(--amazon-orange);
 }
 
 .logo-text {

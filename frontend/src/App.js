@@ -26,6 +26,7 @@ import About from './pages/About';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import ReturnPolicy from './pages/ReturnPolicy';
+import ShippingPolicy from './pages/ShippingPolicy';
 import Help from './pages/Help';
 import ComingSoon from './pages/ComingSoon';
 
@@ -35,19 +36,37 @@ import { getSettings } from './redux/slices/settingsSlice'; // ✅ ADD THIS
 
 function App() {
   const dispatch = useDispatch();
-  const { isAuthenticated } = useSelector(state => state.auth);
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { settings } = useSelector((state) => state.settings);
 
-  // ✅ FETCH SETTINGS ON APP LOAD (for logo)
+  // ✅ FETCH SETTINGS ON APP LOAD
   useEffect(() => {
     dispatch(getSettings());
   }, [dispatch]);
 
+  // ✅ SYNC SEO (Title & Favicon)
+  useEffect(() => {
+    if (settings) {
+      if (settings.metaTitle) {
+        document.title = settings.metaTitle;
+      }
+      if (settings.favIcon?.url) {
+        let link = document.querySelector("link[rel~='icon']");
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        link.href = settings.favIcon.url;
+      }
+    }
+  }, [settings]);
+
   // ✅ FETCH CART AND ORDERS WHEN USER IS AUTHENTICATED
   useEffect(() => {
     if (isAuthenticated) {
-      console.log('✅ User authenticated, fetching cart and orders...');
       dispatch(getCart());
-      dispatch(getMyOrders()); // ✅ FETCH ORDERS ON LOGIN/RELOAD
+      dispatch(getMyOrders());
     }
   }, [dispatch, isAuthenticated]);
 
@@ -67,6 +86,7 @@ function App() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/returns" element={<ReturnPolicy />} />
+          <Route path="/shipping" element={<ShippingPolicy />} />
           <Route path="/help" element={<Help />} />
           
           {/* Coming Soon Pages */}

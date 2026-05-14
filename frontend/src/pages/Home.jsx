@@ -6,6 +6,7 @@ import ProductCard from '../components/ProductCard';
 import Testimonials from '../components/Testimonials';
 import TrustBadges from '../components/TrustBadges';
 import Newsletter from '../components/Newsletter';
+import AdDisplay from '../components/AdDisplay';
 import { motion } from 'framer-motion';
 import './Home.css';
 
@@ -13,6 +14,7 @@ const Home = () => {
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const { products, loading, totalProducts, currentPage, totalPages } = useSelector(state => state.products);
+  const { settings } = useSelector(state => state.settings);
   
   const productsRef = useRef(null);
 
@@ -78,7 +80,7 @@ const Home = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.6 }}
           >
-            Premium Indian Spices
+            {settings?.heroTitle || 'Premium Indian Spices'}
           </motion.h1>
           <motion.p
             className="hero-tagline"
@@ -86,7 +88,7 @@ const Home = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.6 }}
           >
-            From Our Kitchen to Yours - Amrit Rasoi
+            {settings?.heroTagline || `From Our Kitchen to Yours - ${settings?.siteName || 'Amrit Rasoi'}`}
           </motion.p>
           
           <motion.div
@@ -115,6 +117,9 @@ const Home = () => {
         </div>
         <div className="hero-gradient"></div>
       </motion.section>
+
+      {/* Top Banner Ad */}
+      <AdDisplay position="home-top" />
 
       {/* Categories with Premium Emojis */}
       <section className="categories-section">
@@ -313,6 +318,9 @@ const Home = () => {
           )}
         </div>
       </section>
+
+      {/* Middle Banner Ad */}
+      <AdDisplay position="home-middle" />
 
       {/* Features Section */}
       <section className="features-section">

@@ -12,20 +12,9 @@ const {
 // Public routes
 router.get('/settings', getSettings);  // ✅ CHANGED from '/' to '/settings'
 
-// Admin routes
-router.put(
-  '/admin/settings',  // ✅ CHANGED from '/' to '/admin/settings'
-  isAuthenticatedUser, 
-  authorizeRoles('admin'), 
-  upload.single('logo'),
-  updateSettings
-);
+// Public routes
+router.get('/settings', getSettings);
 
-router.put(
-  '/settings/change-password',  // ✅ CHANGED from '/change-password' to '/settings/change-password'
-  isAuthenticatedUser,
-  authorizeRoles('admin'),
-  changeAdminPassword
-);
+// Admin routes (Moved to adminRoutes.js)
 
 module.exports = router;

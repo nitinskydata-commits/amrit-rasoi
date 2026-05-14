@@ -71,12 +71,17 @@ const CreateProduct = () => {
         formDataToSend.append('images', file);
       });
 
-      await createProduct(formDataToSend);
+      console.log('🚀 Submitting product data...', Object.fromEntries(formDataToSend.entries()));
+
+      const { data } = await createProduct(formDataToSend);
+      console.log('✅ Product created response:', data);
+      
       alert('Product created successfully!');
       navigate('/products');
     } catch (error) {
-      alert(error.response?.data?.message || 'Error creating product');
-      console.error(error);
+      console.error('❌ Submission Failed:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Error creating product';
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
 import './AddProduct.css';
 
 const EditProduct = () => {
@@ -35,7 +36,7 @@ const EditProduct = () => {
     try {
       const token = localStorage.getItem('adminToken');
       const { data } = await axios.get(
-        `http://localhost:5000/api/v1/product/${id}`,
+        `${API_BASE_URL}/product/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -191,7 +192,7 @@ const EditProduct = () => {
       };
 
       const { data } = await axios.put(
-        `http://localhost:5000/api/v1/admin/product/${id}`,
+        `${API_BASE_URL}/admin/product/${id}`,
         formDataToSend,
         config
       );

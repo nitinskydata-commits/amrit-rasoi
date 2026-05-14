@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
+  isSuperAdmin: {
+    type: Boolean,
+    default: false
+  },
   otp: {
     type: String
   },
@@ -38,13 +42,18 @@ const userSchema = new mongoose.Schema({
     type: Date
   },
   addresses: [{
-    name: String,
+    fullName: String,
     phone: String,
-    address: String,
+    addressLine1: String,
+    addressLine2: String,
     city: String,
     state: String,
     pincode: String,
-    landmark: String,
+    addressType: {
+      type: String,
+      enum: ['Home', 'Work', 'Other'],
+      default: 'Home'
+    },
     isDefault: { type: Boolean, default: false }
   }],
   createdAt: {

@@ -1,6 +1,7 @@
 const Settings = require('../models/Settings');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+const { isCloudinaryConfigured } = require('../config/cloudinary');
 
 // Get site settings (public)
 exports.getSettings = async (req, res) => {
@@ -14,9 +15,9 @@ exports.getSettings = async (req, res) => {
       settings = await Settings.create({
         siteName: 'SBMI - Amrit Rasoi',
         tagline: 'Fresh & Authentic Indian Food Products',
-        supportEmail: 'support@sbmi.com',
-        supportPhone: '+91 1234567890',
-        companyAddress: 'Baliali, Punjab, India',
+        supportEmail: 'admin@example.com',
+        supportPhone: '+91 xxxxx xxxxx',
+        companyAddress: '[Your Full Address Here]',
         companyLogo: { url: '' },
         codEnabled: true,
         onlinePaymentsEnabled: true,
@@ -48,33 +49,79 @@ exports.getSettings = async (req, res) => {
 exports.updateSettings = async (req, res) => {
   console.log('📝 UPDATE SETTINGS REQUEST');
   console.log('Body:', req.body);
-  console.log('File:', req.file);
+  console.log('Files:', req.files);
   
   try {
     let settings = await Settings.findOne();
     
-    // Handle logo upload - FIXED TO USE companyLogo
-    if (req.file) {
-      req.body.companyLogo = {
-        url: req.protocol + '://' + req.get('host') + '/uploads/' + req.file.filename,
-        public_id: req.file.filename
+    // Create settings if not exists
+    if (!settings) {
+      settings = new Settings();
+    }
+
+    // Handle logo upload
+    if (req.files && req.files.logo) {
+      const file = req.files.logo[0];
+      settings.companyLogo = {
+        url: isCloudinaryConfigured ? file.path : `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
+        public_id: file.filename // ✅ MATCHES MODEL
       };
-      console.log('🖼️ Logo uploaded:', req.body.companyLogo);
+      settings.markModified('companyLogo');
+      console.log('🖼️ Logo updated:', settings.companyLogo);
+    }
+
+    // Handle favIcon upload
+    if (req.files && req.files.favIcon) {
+      const file = req.files.favIcon[0];
+      settings.favIcon = {
+        url: isCloudinaryConfigured ? file.path : `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
+        public_id: file.filename // ✅ MATCHES MODEL
+      };
+      settings.markModified('favIcon');
+      console.log('🖼️ FavIcon updated:', settings.favIcon);
     }
     
-    if (!settings) {
-      settings = await Settings.create(req.body);
-      console.log('✅ Settings created');
-    } else {
-      Object.keys(req.body).forEach(key => {
-        if (req.body[key] !== undefined && req.body[key] !== '') {
-          settings[key] = req.body[key];
+    // Update basic fields
+    const fieldsToUpdate = [
+      'siteName', 'tagline', 'supportEmail', 'supportPhone', 'companyAddress',
+      'codEnabled', 'onlinePaymentsEnabled', 'codMinOrder', 'codMaxOrder', 'codExtraFee',
+      'refundPolicyText', 'shippingPolicyText', 'privacyPolicyText', 'termsAndConditionsText',
+      'gstNumber', 'fssaiNumber', 'metaTitle', 'metaDescription', 'metaKeywords',
+      'googleAnalyticsId', 'footerText', 'maintenanceMode'
+    ];
+
+    fieldsToUpdate.forEach(field => {
+      if (req.body[field] !== undefined) {
+        // Convert strings to booleans if needed
+        if (['codEnabled', 'onlinePaymentsEnabled', 'maintenanceMode'].includes(field)) {
+          // Handle various string/boolean formats
+          const val = req.body[field];
+          settings[field] = val === 'true' || val === true || val === 'on' || val === '1';
+        } 
+        // Convert strings to numbers if needed
+        else if (['codMinOrder', 'codMaxOrder', 'codExtraFee'].includes(field)) {
+          settings[field] = Number(req.body[field]) || 0;
         }
-      });
-      
-      await settings.save();
-      console.log('✅ Settings updated');
-    }
+        else {
+          settings[field] = req.body[field];
+        }
+        console.log(`🔹 [UPDATE] Field: ${field} | Raw: ${req.body[field]} | Parsed: ${settings[field]}`);
+      }
+    });
+
+    // Update social links (grouped)
+    if (!settings.socialLinks) settings.socialLinks = {};
+    const socialPlatforms = ['facebook', 'instagram', 'twitter', 'youtube', 'linkedin'];
+    socialPlatforms.forEach(platform => {
+      if (req.body[platform] !== undefined) {
+        settings.socialLinks[platform] = req.body[platform];
+        console.log(`🔹 Social link updated: ${platform} = ${req.body[platform]}`);
+      }
+    });
+    settings.markModified('socialLinks');
+    
+    await settings.save();
+    console.log('✅ Settings saved successfully to database');
     
     res.status(200).json({
       success: true,

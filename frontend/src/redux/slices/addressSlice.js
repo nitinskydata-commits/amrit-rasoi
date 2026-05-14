@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/v1';
+import { API_BASE_URL } from '../../config/api';
 
 // Get token from localStorage
 const getToken = () => {
@@ -18,7 +18,7 @@ export const fetchAddresses = createAsyncThunk(
       const config = {
         headers: { Authorization: `Bearer ${token}` }
       };
-      const { data } = await axios.get(`${API_URL}/addresses`, config);
+      const { data } = await axios.get(`${API_BASE_URL}/addresses`, config);
       return data.addresses;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch addresses');
@@ -38,7 +38,7 @@ export const addAddress = createAsyncThunk(
           'Content-Type': 'application/json'
         }
       };
-      const { data } = await axios.post(`${API_URL}/addresses`, addressData, config);
+      const { data } = await axios.post(`${API_BASE_URL}/addresses`, addressData, config);
       return data.address;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to add address');
@@ -58,7 +58,7 @@ export const updateAddress = createAsyncThunk(
           'Content-Type': 'application/json'
         }
       };
-      const { data } = await axios.put(`${API_URL}/addresses/${id}`, addressData, config);
+      const { data } = await axios.put(`${API_BASE_URL}/addresses/${id}`, addressData, config);
       return data.address;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update address');
@@ -75,7 +75,7 @@ export const deleteAddress = createAsyncThunk(
       const config = {
         headers: { Authorization: `Bearer ${token}` }
       };
-      await axios.delete(`${API_URL}/addresses/${id}`, config);
+      await axios.delete(`${API_BASE_URL}/addresses/${id}`, config);
       return id;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete address');
@@ -92,7 +92,7 @@ export const setDefaultAddress = createAsyncThunk(
       const config = {
         headers: { Authorization: `Bearer ${token}` }
       };
-      const { data } = await axios.put(`${API_URL}/addresses/${id}/default`, {}, config);
+      const { data } = await axios.put(`${API_BASE_URL}/addresses/${id}/default`, {}, config);
       return data.address;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to set default address');

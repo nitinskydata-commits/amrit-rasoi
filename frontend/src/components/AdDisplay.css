@@ -1,0 +1,63 @@
+.ad-container {
+  width: 100%;
+  margin: 2rem 0;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+.ad-item {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 1200px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.ad-item:hover {
+  transform: scale(1.01);
+}
+
+.ad-image {
+  width: 100%;
+  height: auto;
+  min-height: 150px;
+  object-fit: cover;
+  display: block;
+}
+
+.ad-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  padding: 20px;
+  color: white;
+}
+
+.ad-overlay h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* Position specifics */
+.ad-footer-banner {
+  margin: 0;
+  border-radius: 0;
+}
+
+.ad-footer-banner .ad-item {
+  border-radius: 0;
+  max-width: 100%;
+}
+
+.ad-top_banner {
+  margin-top: 0;
+  border-radius: 0;
+}
