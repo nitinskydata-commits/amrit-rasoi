@@ -3,6 +3,7 @@ const router = express.Router();
 const upload = require('../middleware/upload');
 const {
   getProducts,
+  getSearchSuggestions,
   getProductDetails,
   createProduct,
   updateProduct,
@@ -14,6 +15,7 @@ const { isAuthenticatedUser, authorizeRoles } = require('../middleware/auth');
 
 // Public Routes
 router.get('/products', getProducts);
+router.get('/products/suggestions', getSearchSuggestions);
 router.get('/product/:id', getProductDetails);
 router.get('/reviews', getProductReviews);
 

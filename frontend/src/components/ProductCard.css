@@ -5,21 +5,28 @@
 
 .product-card {
   background: white;
-  border: 1px solid var(--amazon-border);
-  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+  border-radius: 16px; /* High-end spec */
   overflow: hidden;
-  transition: var(--transition);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
-  height: 100%; /* ✅ FIXED: Equal height for all cards */
+  height: 100%;
   position: relative;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  border-color: #e2e8f0;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
 }
 
 /* Discount Badge */
 .discount-badge {
   position: absolute;
   top: 10px;
-  left: 10px;
+  right: 10px;
   background: #CC0C39;
   color: white;
   padding: 5px 10px;
@@ -198,5 +205,12 @@
   
   .current-price {
     font-size: 20px;
+  }
+
+  .discount-badge {
+    top: 5px;
+    right: 5px;
+    padding: 3px 8px;
+    font-size: 10px;
   }
 }

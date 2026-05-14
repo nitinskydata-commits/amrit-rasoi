@@ -18,7 +18,10 @@ const CreateProduct = () => {
     brand: '',
     stock: '',
     weight: '',
-    unit: 'g'
+    unit: 'g',
+    isFeatured: false,
+    inTodaysDeal: false,
+    inNewArrivals: false
   });
 
   const categories = [
@@ -207,6 +210,37 @@ const CreateProduct = () => {
               />
             </div>
           </div>
+        </div>
+
+        <div className="card">
+          <h2 className="card-title">Storefront visibility</h2>
+          <p style={{ color: '#666', marginBottom: '12px', fontSize: '14px' }}>
+            Control where this product appears on the customer site (managed by admin).
+          </p>
+          <label style={{ display: 'block', marginBottom: '8px' }}>
+            <input
+              type="checkbox"
+              checked={formData.isFeatured}
+              onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+            />{' '}
+            Featured (homepage sort)
+          </label>
+          <label style={{ display: 'block', marginBottom: '8px' }}>
+            <input
+              type="checkbox"
+              checked={formData.inTodaysDeal}
+              onChange={(e) => setFormData({ ...formData, inTodaysDeal: e.target.checked })}
+            />{' '}
+            Today&apos;s Deal
+          </label>
+          <label style={{ display: 'block' }}>
+            <input
+              type="checkbox"
+              checked={formData.inNewArrivals}
+              onChange={(e) => setFormData({ ...formData, inNewArrivals: e.target.checked })}
+            />{' '}
+            New Arrivals
+          </label>
         </div>
 
         {/* Pricing & Stock */}

@@ -83,7 +83,7 @@ exports.updateSettings = async (req, res) => {
     
     // Update basic fields
     const fieldsToUpdate = [
-      'siteName', 'tagline', 'supportEmail', 'supportPhone', 'companyAddress',
+      'siteName', 'tagline', 'supportEmail', 'supportPhone', 'companyAddress', 'deliveryAreaLabel',
       'codEnabled', 'onlinePaymentsEnabled', 'codMinOrder', 'codMaxOrder', 'codExtraFee',
       'refundPolicyText', 'shippingPolicyText', 'privacyPolicyText', 'termsAndConditionsText',
       'gstNumber', 'fssaiNumber', 'metaTitle', 'metaDescription', 'metaKeywords',
@@ -129,10 +129,14 @@ exports.updateSettings = async (req, res) => {
       settings
     });
   } catch (error) {
-    console.error('❌ Update settings error:', error.message);
+    console.error('❌ UPDATE SETTINGS ERROR DETAILS:', {
+      message: error.message,
+      stack: error.stack,
+      body: req.body
+    });
     res.status(500).json({
       success: false,
-      message: error.message
+      message: `Failed to update settings: ${error.message}`
     });
   }
 };

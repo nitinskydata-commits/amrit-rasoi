@@ -64,9 +64,13 @@ const ProductCard = ({ product }) => {
         {/* Product Image */}
         <div className="product-image">
           <img 
-            src={product.images?.[0]?.url || '/placeholder.jpg'} 
+            src={product.images?.[0]?.url || '/placeholder.png'} 
             alt={product.name}
             loading="lazy"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = '/placeholder.png';
+            }}
           />
         </div>
 

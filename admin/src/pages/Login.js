@@ -24,7 +24,14 @@ const Login = ({ onLogin }) => {
         setError('Access denied. Admin privileges required.');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      console.error('Login error:', err);
+      if (!err.response) {
+        setError('Server unreachable. Please ensure the backend is running on port 5000.');
+      } else if (err.response.status === 503) {
+        setError('Database connection error. The server is up but cannot reach MongoDB.');
+      } else {
+        setError(err.response?.data?.message || 'Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

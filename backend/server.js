@@ -128,15 +128,28 @@ app.use((req, res) => {
 });
 
 // Start server
+console.log(`🔍 PORT from env: ${process.env.PORT}`);
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`\n${'='.repeat(50)}`);
   console.log(`✅ Server running on http://localhost:${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 CORS enabled for: http://localhost:3000 & 3001`);
   console.log(`📁 Uploads folder: /uploads`);
   console.log(`${'='.repeat(50)}\n`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ Port ${PORT} is already in use (another Node/backend is probably running).`);
+    console.error('   Fix: stop that process, or set PORT in config.env to e.g. 5001\n');
+    console.error('   Windows — find PID:  netstat -ano | findstr :' + PORT);
+    console.error('   Windows — free port: taskkill /PID <pid_from_last_column> /F\n');
+  } else {
+    console.error('❌ Server listen error:', err.message);
+  }
+  process.exit(1);
 });
 
 // Error handling - SAFELY LOG INSTEAD OF CRASHING

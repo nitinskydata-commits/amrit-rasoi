@@ -22,7 +22,6 @@ const Newsletter = () => {
       }
     } catch (error) {
       console.error('Error fetching subscribers:', error);
-      alert('Failed to fetch subscribers');
     } finally {
       setLoading(false);
     }

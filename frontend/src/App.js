@@ -29,6 +29,10 @@ import ReturnPolicy from './pages/ReturnPolicy';
 import ShippingPolicy from './pages/ShippingPolicy';
 import Help from './pages/Help';
 import ComingSoon from './pages/ComingSoon';
+import Deals from './pages/Deals';
+import NewArrivals from './pages/NewArrivals';
+import SearchSuggestPage from './pages/SearchSuggestPage';
+import SearchResultsPage from './pages/SearchResultsPage';
 
 import { getCart } from './redux/slices/cartSlice';
 import { getMyOrders } from './redux/slices/orderSlice'; // ✅ ADD THIS
@@ -79,6 +83,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/search-suggest" element={<SearchSuggestPage />} />
+          <Route path="/search" element={<SearchResultsPage />} />
           
           {/* Footer Pages - Public */}
           <Route path="/contact" element={<ContactUs />} />
@@ -88,6 +94,8 @@ function App() {
           <Route path="/returns" element={<ReturnPolicy />} />
           <Route path="/shipping" element={<ShippingPolicy />} />
           <Route path="/help" element={<Help />} />
+          <Route path="/deals" element={<Deals />} />
+          <Route path="/new-arrivals" element={<NewArrivals />} />
           
           {/* Coming Soon Pages */}
           <Route path="/careers" element={<ComingSoon title="Careers" />} />

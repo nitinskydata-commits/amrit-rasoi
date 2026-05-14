@@ -11,6 +11,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  text-align: center;
 }
 
 .hero-content {
@@ -18,8 +19,11 @@
   z-index: 2;
   text-align: center;
   color: var(--amazon-dark);
-  max-width: 700px;
+  max-width: 800px;
   padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .hero-content h1 {
@@ -27,12 +31,14 @@
   font-weight: 800;
   margin-bottom: 15px;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  width: 100%;
 }
 
 .hero-tagline {
   font-size: 20px;
   margin-bottom: 30px;
   opacity: 0.9;
+  width: 100%;
 }
 
 .hero-gradient {
@@ -400,4 +406,51 @@ html {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 15px;
   }
+}
+
+/* Admin-driven strips: Today's Deals & New Arrivals */
+.home-strip-section {
+  background: #fff;
+  border-bottom: 1px solid var(--amazon-border, #d5d9d9);
+  padding: 1.25rem 0 1.75rem;
+}
+
+.home-strip-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.home-strip-head h2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--amazon-text, #0f1111);
+  margin: 0;
+}
+
+.home-strip-head a {
+  color: var(--amazon-blue, #007185);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.home-strip-head a:hover {
+  color: #c7511f;
+  text-decoration: underline;
+}
+
+.home-strip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.home-strip-empty {
+  font-size: 0.95rem;
+  color: var(--amazon-text-light, #565959);
+  margin: 0;
+  padding: 0.5rem 0;
 }

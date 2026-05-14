@@ -33,6 +33,11 @@ const settingsSchema = new mongoose.Schema({
     type: String,
     default: 'Baliali, Punjab, India'
   },
+  /** Shown in header when the user has no saved address (e.g. "Ships across India" or your warehouse city) */
+  deliveryAreaLabel: {
+    type: String,
+    default: ''
+  },
   socialLinks: {
     facebook: String,
     instagram: String,
@@ -99,12 +104,7 @@ const settingsSchema = new mongoose.Schema({
   
   // Other Settings
   gstNumber: String,
-  fssaiNumber: String,
-  
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
+  fssaiNumber: String
 }, {
   timestamps: true
 });

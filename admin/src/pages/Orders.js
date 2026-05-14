@@ -21,7 +21,6 @@ const Orders = () => {
       setOrders(response.data.orders);
     } catch (error) {
       console.error('❌ Error fetching orders:', error);
-      alert('Error loading orders');
     } finally {
       setLoading(false);
     }

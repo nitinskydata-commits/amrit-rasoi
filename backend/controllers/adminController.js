@@ -270,6 +270,32 @@ exports.deleteProductAdmin = async (req, res) => {
   }
 };
 
+// Bulk delete products (admin)
+exports.bulkDeleteProducts = async (req, res) => {
+  try {
+    const { productIds } = req.body;
+
+    if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide an array of product IDs'
+      });
+    }
+
+    const result = await Product.deleteMany({ _id: { $in: productIds } });
+
+    res.status(200).json({
+      success: true,
+      message: `${result.deletedCount} products deleted successfully`
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 // ==================== ORDER MANAGEMENT ====================
 
 // Get all orders (admin)
@@ -469,10 +495,17 @@ exports.updateUserRole = async (req, res) => {
     }
 
     const { role } = req.body;
-    if (!['user', 'admin'].includes(role)) {
+    if (role === 'admin') {
       return res.status(400).json({
         success: false,
-        message: 'Invalid role. Only user or admin roles are permitted.'
+        message: 'Admin roles cannot be assigned through this simple update. Please use the "Promote to Partner" process.'
+      });
+    }
+
+    if (!['user'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid role. Only user roles are permitted here.'
       });
     }
 
@@ -498,6 +531,89 @@ exports.updateUserRole = async (req, res) => {
       message: 'User role updated successfully',
       user: sanitizedUser
     });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Critical Role Update (SuperAdmin Only + Multi-Step Verification)
+// Requires: adminPassword (requester), targetPhone (for confirmation), newRole
+exports.secureRoleUpdate = async (req, res) => {
+  try {
+    const { adminPassword, targetPhone, newRole } = req.body;
+    const targetUserId = req.params.id;
+
+    if (!adminPassword || !targetPhone || !newRole) {
+      return res.status(400).json({
+        success: false,
+        message: 'Admin password, target user phone, and new role are required for this critical action.'
+      });
+    }
+
+    // 1. Verify the requester is a SuperAdmin and check password
+    const admin = await User.findById(req.user.id).select('+password');
+    if (!admin || !admin.isSuperAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access Denied: Only a SuperAdmin can perform critical role changes.'
+      });
+    }
+
+    // 2. Re-verify Admin Password
+    const isPasswordMatched = await admin.comparePassword(adminPassword);
+    if (!isPasswordMatched) {
+      return res.status(401).json({
+        success: false,
+        message: 'Security Violation: Incorrect Admin Password. Action blocked.'
+      });
+    }
+
+    // 3. Find target user and verify phone number
+    const targetUser = await User.findById(targetUserId);
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target user not found.'
+      });
+    }
+
+    // Normalize phone numbers for comparison
+    const normalizedTargetPhone = targetUser.phone.replace(/[^0-9]/g, '');
+    const normalizedInputPhone = targetPhone.replace(/[^0-9]/g, '');
+
+    if (normalizedTargetPhone.slice(-10) !== normalizedInputPhone.slice(-10)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Security Mismatch: The phone number entered does not match the target user records.'
+      });
+    }
+
+    // 4. Prevent demoting the primary super admin (self-protection)
+    if (targetUser._id.toString() === admin._id.toString() && newRole !== 'admin') {
+      return res.status(400).json({
+        success: false,
+        message: 'Safety Block: You cannot demote yourself. Another SuperAdmin must perform this action.'
+      });
+    }
+
+    // 5. Update Role
+    targetUser.role = newRole;
+    // Partners are admins, but only one primary SuperAdmin should exist usually
+    // We can decide if partners are also superAdmins
+    targetUser.isSuperAdmin = (newRole === 'admin'); 
+
+    await targetUser.save();
+
+    console.log(`🛡️ SECURITY ALERT: Role for ${targetUser.email} changed to ${newRole} by ${admin.email}`);
+
+    res.status(200).json({
+      success: true,
+      message: `Security Verified: ${targetUser.name} is now a ${newRole}.`
+    });
+
   } catch (error) {
     res.status(500).json({
       success: false,

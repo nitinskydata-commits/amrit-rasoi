@@ -15,7 +15,9 @@ const EditProduct = () => {
     description: '',
     category: 'Spices',
     brand: 'Amrit Rasoi',
-    isFeatured: false
+    isFeatured: false,
+    inTodaysDeal: false,
+    inNewArrivals: false
   });
 
   const [variants, setVariants] = useState([
@@ -50,7 +52,9 @@ const EditProduct = () => {
           description: product.description || '',
           category: product.category || 'Spices',
           brand: product.brand || 'Amrit Rasoi',
-          isFeatured: product.isFeatured || false
+          isFeatured: !!product.isFeatured,
+          inTodaysDeal: !!product.inTodaysDeal,
+          inNewArrivals: !!product.inNewArrivals
         });
 
         // Set variants if they exist
@@ -289,7 +293,29 @@ const EditProduct = () => {
                 checked={formData.isFeatured}
                 onChange={handleChange}
               />
-              <span>Feature this product on homepage</span>
+              <span>Feature on homepage (featured sort)</span>
+            </label>
+          </div>
+          <div className="form-group checkbox-group">
+            <label>
+              <input
+                type="checkbox"
+                name="inTodaysDeal"
+                checked={formData.inTodaysDeal}
+                onChange={handleChange}
+              />
+              <span>Today&apos;s Deal (storefront + /deals)</span>
+            </label>
+          </div>
+          <div className="form-group checkbox-group">
+            <label>
+              <input
+                type="checkbox"
+                name="inNewArrivals"
+                checked={formData.inNewArrivals}
+                onChange={handleChange}
+              />
+              <span>New Arrivals (storefront + /new-arrivals)</span>
             </label>
           </div>
         </div>

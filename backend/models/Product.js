@@ -159,6 +159,16 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  /** Shown on Today's Deals (home strip + /deals) — set in admin */
+  inTodaysDeal: {
+    type: Boolean,
+    default: false
+  },
+  /** Shown on New Arrivals (home strip + /new-arrivals) — set in admin */
+  inNewArrivals: {
+    type: Boolean,
+    default: false
+  },
   isActive: {
     type: Boolean,
     default: true

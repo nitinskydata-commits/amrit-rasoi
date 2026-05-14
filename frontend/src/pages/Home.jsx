@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
+import axios from 'axios';
 import { getProducts } from '../redux/slices/productSlice';
 import ProductCard from '../components/ProductCard';
 import Testimonials from '../components/Testimonials';
 import TrustBadges from '../components/TrustBadges';
 import Newsletter from '../components/Newsletter';
 import AdDisplay from '../components/AdDisplay';
+import { API_BASE_URL } from '../config/api';
 import { motion } from 'framer-motion';
 import './Home.css';
 
@@ -18,6 +20,10 @@ const Home = () => {
   
   const productsRef = useRef(null);
 
+  const [dealStrip, setDealStrip] = useState([]);
+  const [newArrivalStrip, setNewArrivalStrip] = useState([]);
+  const [stripLoading, setStripLoading] = useState(true);
+
   const [filters, setFilters] = useState({
     keyword: searchParams.get('keyword') || '',
     category: searchParams.get('category') || '',
@@ -28,14 +34,43 @@ const Home = () => {
   });
 
   useEffect(() => {
+    let cancelled = false;
+    const loadStrips = async () => {
+      setStripLoading(true);
+      try {
+        const [dealsRes, newRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/products?todaysDeal=true&limit=8`),
+          axios.get(`${API_BASE_URL}/products?newArrivals=true&limit=8`)
+        ]);
+        if (!cancelled) {
+          setDealStrip(dealsRes.data?.products || []);
+          setNewArrivalStrip(newRes.data?.products || []);
+        }
+      } catch {
+        if (!cancelled) {
+          setDealStrip([]);
+          setNewArrivalStrip([]);
+        }
+      } finally {
+        if (!cancelled) setStripLoading(false);
+      }
+    };
+    loadStrips();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     dispatch(getProducts(filters));
   }, [dispatch, filters]);
 
   useEffect(() => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       keyword: searchParams.get('keyword') || '',
-      category: searchParams.get('category') || ''
+      category: searchParams.get('category') || '',
+      page: 1
     }));
   }, [searchParams]);
 
@@ -117,6 +152,51 @@ const Home = () => {
         </div>
         <div className="hero-gradient"></div>
       </motion.section>
+
+      {/* Admin-curated: Today's Deals & New Arrivals */}
+      <section className="home-strip-section">
+        <div className="container">
+          <div className="home-strip-head">
+            <h2>Today&apos;s Deals</h2>
+            <Link to="/deals">See all</Link>
+          </div>
+          {stripLoading ? (
+            <p className="home-strip-empty">Loading deals…</p>
+          ) : dealStrip.length > 0 ? (
+            <div className="home-strip-grid">
+              {dealStrip.map((product) => (
+                <ProductCard key={product._id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <p className="home-strip-empty">
+              No deals yet — your admin can add products and enable <strong>Today&apos;s Deal</strong> in the admin panel.
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section className="home-strip-section" style={{ background: '#f7fafa' }}>
+        <div className="container">
+          <div className="home-strip-head">
+            <h2>New Arrivals</h2>
+            <Link to="/new-arrivals">See all</Link>
+          </div>
+          {stripLoading ? (
+            <p className="home-strip-empty">Loading new arrivals…</p>
+          ) : newArrivalStrip.length > 0 ? (
+            <div className="home-strip-grid">
+              {newArrivalStrip.map((product) => (
+                <ProductCard key={product._id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <p className="home-strip-empty">
+              No new arrivals yet — your admin can mark products under <strong>New Arrivals</strong> in the admin panel.
+            </p>
+          )}
+        </div>
+      </section>
 
       {/* Top Banner Ad */}
       <AdDisplay position="home-top" />

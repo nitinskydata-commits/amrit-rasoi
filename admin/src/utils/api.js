@@ -41,6 +41,7 @@ export const getAllProducts = (params) => api.get('/admin/products', { params })
 export const createProduct = (data) => api.post('/admin/product/new', data);
 export const updateProduct = (id, data) => api.put(`/admin/product/${id}`, data);
 export const deleteProduct = (id) => api.delete(`/admin/product/${id}`);
+export const bulkDeleteProducts = (productIds) => api.post('/admin/products/bulk-delete', { productIds });
 
 // Order APIs
 export const getAllOrders = (params) => api.get('/admin/orders', { params });
@@ -51,6 +52,7 @@ export const deleteOrder = (id) => api.delete(`/admin/order/${id}`);
 // User APIs
 export const getAllUsers = () => api.get('/admin/users');
 export const updateUserRole = (id, role) => api.put(`/admin/user/${id}`, { role });
+export const secureRoleUpdate = (id, data) => api.put(`/admin/user/secure-role-update/${id}`, data);
 export const deleteUser = (id) => api.delete(`/admin/user/${id}`);
 
 // Review APIs

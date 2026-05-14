@@ -5,19 +5,32 @@ import { API_BASE_URL } from '../../config/api';
 // Get All Products
 export const getProducts = createAsyncThunk(
   'products/getProducts',
-  async ({ keyword = '', category = '', page = 1, sort = '', minPrice = '', maxPrice = '' }, { rejectWithValue }) => {
+  async ({
+    keyword = '',
+    category = '',
+    page = 1,
+    sort = '',
+    minPrice = '',
+    maxPrice = '',
+    todaysDeal = false,
+    newArrivals = false,
+    limit = ''
+  }, { rejectWithValue }) => {
     try {
       let url = `${API_BASE_URL}/products?page=${page}`;
-      if (keyword) url += `&keyword=${keyword}`;
-      if (category) url += `&category=${category}`;
-      if (sort) url += `&sort=${sort}`;
-      if (minPrice) url += `&minPrice=${minPrice}`;
-      if (maxPrice) url += `&maxPrice=${maxPrice}`;
+      if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+      if (category) url += `&category=${encodeURIComponent(category)}`;
+      if (sort) url += `&sort=${encodeURIComponent(sort)}`;
+      if (minPrice) url += `&minPrice=${encodeURIComponent(minPrice)}`;
+      if (maxPrice) url += `&maxPrice=${encodeURIComponent(maxPrice)}`;
+      if (todaysDeal) url += '&todaysDeal=true';
+      if (newArrivals) url += '&newArrivals=true';
+      if (limit) url += `&limit=${encodeURIComponent(String(limit))}`;
 
       const { data } = await axios.get(url);
       return data;
     } catch (error) {
-      return rejectWithValue(error.response.data.message);
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );

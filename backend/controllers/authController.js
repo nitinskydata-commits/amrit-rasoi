@@ -57,6 +57,7 @@ exports.login = async (req, res) => {
     console.log("USER FROM DB:", user);
 
     if (!user) {
+      console.log('❌ Login failed: User not found with email:', email);
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
@@ -66,6 +67,7 @@ exports.login = async (req, res) => {
     const isPasswordMatched = await user.comparePassword(password);
 
     if (!isPasswordMatched) {
+      console.log('❌ Login failed: Incorrect password for user:', email);
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
@@ -90,6 +92,15 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Login error:', error.message);
+    
+    // Check if it's a timeout error
+    if (error.name === 'MongooseError' || error.message.includes('buffering timed out')) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database connection error. Please try again later or check server logs.'
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: error.message

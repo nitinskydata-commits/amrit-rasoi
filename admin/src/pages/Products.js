@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAllProducts, updateProduct, deleteProduct } from '../utils/api';
-import { FaEdit, FaTrash, FaSearch, FaPlus } from 'react-icons/fa';
+import { getAllProducts, updateProduct, deleteProduct, bulkDeleteProducts } from '../utils/api';
+import { FaEdit, FaTrash, FaSearch, FaPlus, FaCheckSquare } from 'react-icons/fa';
 
 const Products = () => {
   const navigate = useNavigate();
@@ -9,6 +9,7 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
+  const [selectedProducts, setSelectedProducts] = useState([]);
 
   useEffect(() => {
     fetchProducts();
@@ -44,6 +45,35 @@ const Products = () => {
       fetchProducts();
     } catch (error) {
       alert('Error updating product');
+    }
+  };
+
+  const handleSelectProduct = (id) => {
+    if (selectedProducts.includes(id)) {
+      setSelectedProducts(selectedProducts.filter(item => item !== id));
+    } else {
+      setSelectedProducts([...selectedProducts, id]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedProducts.length === filteredProducts.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(filteredProducts.map(p => p._id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (window.confirm(`Are you sure you want to delete ${selectedProducts.length} selected products?`)) {
+      try {
+        await bulkDeleteProducts(selectedProducts);
+        alert('Selected products deleted successfully');
+        setSelectedProducts([]);
+        fetchProducts();
+      } catch (error) {
+        alert(error.response?.data?.message || 'Error deleting products');
+      }
     }
   };
 
@@ -93,12 +123,28 @@ const Products = () => {
             <option value="low">Low Stock (&lt;10)</option>
             <option value="out">Out of Stock</option>
           </select>
+          {selectedProducts.length > 0 && (
+            <button 
+              className="btn btn-danger" 
+              onClick={handleBulkDelete}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', animation: 'fadeIn 0.3s' }}
+            >
+              <FaTrash /> Delete Selected ({selectedProducts.length})
+            </button>
+          )}
         </div>
 
         <div className="table-container">
           <table>
             <thead>
               <tr>
+                <th style={{ width: '40px' }}>
+                  <input 
+                    type="checkbox" 
+                    onChange={handleSelectAll}
+                    checked={filteredProducts.length > 0 && selectedProducts.length === filteredProducts.length}
+                  />
+                </th>
                 <th>Image</th>
                 <th>Name</th>
                 <th>Category</th>
@@ -110,7 +156,14 @@ const Products = () => {
             </thead>
             <tbody>
               {filteredProducts.map((product) => (
-                <tr key={product._id}>
+                <tr key={product._id} className={selectedProducts.includes(product._id) ? 'selected-row' : ''}>
+                  <td>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedProducts.includes(product._id)}
+                      onChange={() => handleSelectProduct(product._id)}
+                    />
+                  </td>
                   <td>
                     <img 
                       src={product.images[0]?.url || '/placeholder.png'} 
@@ -164,5 +217,15 @@ const Products = () => {
     </div>
   );
 };
+
+// Add some styles for the selected row
+const styles = `
+  .selected-row { background-color: #fff4f4 !important; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+`;
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
 
 export default Products;

@@ -2,6 +2,21 @@ const Product = require('../models/Product');
 const { deleteMultipleImages } = require('../utils/cloudinaryUtils');
 const { isCloudinaryConfigured } = require('../config/cloudinary');
 
+const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const coerceProductBooleans = (body) => {
+  const boolFields = [
+    'isFeatured', 'inTodaysDeal', 'inNewArrivals', 'isActive', 'isRefundable',
+    'replacementOnly', 'codAllowed', 'onlinePaymentOnly', 'isCollaborationProduct'
+  ];
+  boolFields.forEach((field) => {
+    if (body[field] !== undefined) {
+      const v = body[field];
+      body[field] = v === true || v === 'true' || v === '1' || v === 'on';
+    }
+  });
+};
+
 // Parse variants from form data - NEW HELPER FUNCTION
 const parseVariants = (variantsData) => {
   if (!variantsData) return [];
@@ -24,55 +39,130 @@ const parseVariants = (variantsData) => {
   }
 };
 
-// Get All Products
+// Get All Products (Advanced Search Engine)
 exports.getProducts = async (req, res) => {
   try {
-    const { keyword, category, minPrice, maxPrice, page = 1, sort } = req.query;
-    
-    const query = {};
-    
-    if (keyword) {
-      query.name = { $regex: keyword, $options: 'i' };
+    const {
+      keyword,
+      category,
+      minPrice,
+      maxPrice,
+      page = 1,
+      sort,
+      todaysDeal,
+      newArrivals,
+      ratings,
+      brand,
+      stock,
+      limit: limitRaw
+    } = req.query;
+
+    let query = { isActive: { $ne: false } };
+
+    // 1. Intelligent Keyword Search
+    if (keyword && String(keyword).trim()) {
+      query.$text = { $search: String(keyword).trim() };
     }
-    
-    if (category) {
-      query.category = category;
-    }
-    
+
+    // 2. Category & Brand Filtering
+    if (category) query.category = category;
+    if (brand) query.brand = brand;
+
+    // 3. Price Range
     if (minPrice || maxPrice) {
       query.price = {};
       if (minPrice) query.price.$gte = Number(minPrice);
       if (maxPrice) query.price.$lte = Number(maxPrice);
     }
-    
+
+    // 4. Ratings (4 stars and up, etc.)
+    if (ratings) {
+      query.ratings = { $gte: Number(ratings) };
+    }
+
+    // 5. Availability (Amazon Style)
+    if (stock === 'inStock') {
+      query.stock = { $gt: 0 };
+    }
+
+    // 6. Special Tags
+    if (todaysDeal === 'true') query.inTodaysDeal = true;
+    if (newArrivals === 'true') query.inNewArrivals = true;
+
+    // 7. Dynamic Sorting Logic
     let sortOption = {};
     if (sort === 'price-low') sortOption = { price: 1 };
     else if (sort === 'price-high') sortOption = { price: -1 };
     else if (sort === 'rating') sortOption = { ratings: -1 };
     else if (sort === 'popular') sortOption = { numOfReviews: -1 };
-    
-    const limit = 12;
-    const skip = (page - 1) * limit;
-    
+    else if (keyword) sortOption = { score: { $meta: "textScore" } }; // Relevance ranking
+    else sortOption = { isFeatured: -1, createdAt: -1 };
+
+    const limit = Math.min(Math.max(Number(limitRaw) || 12, 1), 48);
+    const skip = (Number(page) - 1) * limit;
+
     const products = await Product.find(query)
+      .select(keyword ? { score: { $meta: "textScore" } } : {})
       .sort(sortOption)
       .limit(limit)
       .skip(skip);
-    
+
     const totalProducts = await Product.countDocuments(query);
-    
+
+    // Dynamic Meta Information (For Amazon-style Sidebar)
+    const allBrands = await Product.distinct('brand', { category: category || { $exists: true } });
+    const allCategories = await Product.distinct('category');
+
     res.status(200).json({
       success: true,
       products,
       totalProducts,
       currentPage: Number(page),
-      totalPages: Math.ceil(totalProducts / limit)
+      totalPages: Math.ceil(totalProducts / limit) || 1,
+      meta: {
+        brands: allBrands,
+        categories: allCategories
+      }
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: error.message
     });
+  }
+};
+
+// Real-time Autocomplete Suggestions (Amazon Style)
+exports.getSearchSuggestions = async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.length < 2) return res.status(200).json({ success: true, suggestions: [] });
+
+    const suggestions = await Product.find({
+      $or: [
+        { name: { $regex: q, $options: 'i' } },
+        { brand: { $regex: q, $options: 'i' } },
+        { category: { $regex: q, $options: 'i' } }
+      ],
+      isActive: true
+    })
+    .select('name category brand images price ratings')
+    .limit(8);
+
+    res.status(200).json({
+      success: true,
+      suggestions: suggestions.map(p => ({
+        id: p._id,
+        name: p.name,
+        category: p.category,
+        brand: p.brand,
+        image: p.images[0]?.url,
+        price: p.price,
+        rating: p.ratings
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -133,6 +223,8 @@ exports.createProduct = async (req, res) => {
       }
     });
 
+    coerceProductBooleans(req.body);
+
     // ✅ LOG BEFORE CREATE
     console.log('📝 FINAL PRODUCT DATA FOR DB:', req.body);
 
@@ -182,6 +274,14 @@ exports.updateProduct = async (req, res) => {
       req.body.variants = parseVariants(req.body.variants);
       console.log('✅ Variants updated:', req.body.variants);
     }
+
+    const numericFields = ['price', 'originalPrice', 'stock', 'weight', 'mrp'];
+    numericFields.forEach(field => {
+      if (req.body[field] !== undefined && req.body[field] !== '') {
+        req.body[field] = Number(req.body[field]);
+      }
+    });
+    coerceProductBooleans(req.body);
     
     product = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,

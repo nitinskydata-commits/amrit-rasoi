@@ -4,7 +4,8 @@ import productReducer from './slices/productSlice';
 import cartReducer from './slices/cartSlice';
 import orderReducer from './slices/orderSlice';
 import addressReducer from './slices/addressSlice';
-import settingsReducer from './slices/settingsSlice'; // ✅ ADD THIS
+import settingsReducer from './slices/settingsSlice';
+import searchReducer from './slices/searchSlice';
 
 const store = configureStore({
   reducer: {
@@ -13,7 +14,8 @@ const store = configureStore({
     cart: cartReducer,
     order: orderReducer,
     address: addressReducer,
-    settings: settingsReducer, // ✅ ADD THIS
+    settings: settingsReducer,
+    search: searchReducer,
   },
 });
 

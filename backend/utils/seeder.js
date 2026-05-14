@@ -14,7 +14,7 @@ const seedAdmin = async () => {
                 name: 'SBMI Admin',
                 email: email,
                 phone: '+91 xxxxx xxxxx',
-                password: 'Admin@123',
+                password: 'admin123',
                 role: 'admin',
                 isSuperAdmin: true
             });

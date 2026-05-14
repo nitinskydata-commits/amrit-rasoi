@@ -10,6 +10,7 @@ const {
   getAllProductsAdmin,
   updateProductAdmin,
   deleteProductAdmin,
+  bulkDeleteProducts,
   getAllOrdersAdmin,
   updateOrderStatus,
   processRefund,
@@ -17,6 +18,7 @@ const {
   getAllUsers,
   getSingleUser,
   updateUserRole,
+  secureRoleUpdate,
   deleteUser,
   getAllReviews,
   deleteReview,
@@ -52,6 +54,7 @@ router.get('/products', getAllProductsAdmin);
 router.post('/product/new', upload.array('images', 5), createProduct); // ✅ FIXED from getAllProductsAdmin
 router.put('/product/:id', upload.array('images', 5), updateProduct); // ✅ FIXED - Use productController for image updates
 router.delete('/product/:id', deleteProductAdmin);
+router.post('/products/bulk-delete', bulkDeleteProducts);
 
 // Orders Management
 router.get('/orders', getAllOrdersAdmin);
@@ -63,6 +66,7 @@ router.delete('/order/:id', deleteOrder);
 router.get('/users', getAllUsers);
 router.get('/user/:id', getSingleUser);
 router.put('/user/:id', updateUserRole);
+router.put('/user/secure-role-update/:id', secureRoleUpdate);
 router.delete('/user/:id', deleteUser);
 
 // Reviews Management

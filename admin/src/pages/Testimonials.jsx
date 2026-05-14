@@ -31,7 +31,6 @@ const Testimonials = () => {
       }
     } catch (error) {
       console.error('Error fetching testimonials:', error);
-      alert('Failed to fetch testimonials');
     } finally {
       setLoading(false);
     }

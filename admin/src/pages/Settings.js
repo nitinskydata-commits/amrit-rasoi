@@ -13,6 +13,7 @@ const Settings = () => {
     supportEmail: '',
     supportPhone: '',
     companyAddress: '',
+    deliveryAreaLabel: '',
     codEnabled: true,
     onlinePaymentsEnabled: true,
     codMinOrder: 0,
@@ -95,9 +96,12 @@ const Settings = () => {
     try {
       const formDataToSend = new FormData();
       
-      // Append all form fields except files and nested objects
+      // Append all form fields except files and nested objects (logo, favicon, etc.)
       Object.keys(formData).forEach(key => {
-        formDataToSend.append(key, formData[key]);
+        // Exclude the actual logo/favIcon objects if they exist in state
+        if (key !== 'companyLogo' && key !== 'favIcon' && key !== 'socialLinks') {
+          formDataToSend.append(key, formData[key]);
+        }
       });
 
       // Append files
@@ -108,8 +112,8 @@ const Settings = () => {
       alert('Settings updated successfully');
       fetchSettings();
     } catch (error) {
-      alert('Error updating settings');
-      console.error(error);
+      console.error('❌ Settings Update Error:', error);
+      alert(error.response?.data?.message || 'Error updating settings. Check console for details.');
     } finally {
       setSaving(false);
     }
@@ -215,6 +219,17 @@ const Settings = () => {
             <div className="form-group">
               <label>Company Address</label>
               <textarea className="form-control" rows="2" value={formData.companyAddress} onChange={(e) => setFormData({...formData, companyAddress: e.target.value})}></textarea>
+            </div>
+            <div className="form-group">
+              <label>Default delivery line (no customer address yet)</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. Ships across India · Dispatch from Punjab"
+                value={formData.deliveryAreaLabel || ''}
+                onChange={(e) => setFormData({ ...formData, deliveryAreaLabel: e.target.value })}
+              />
+              <small style={{ color: '#666' }}>Shown in the site header until the customer signs in and adds an address.</small>
             </div>
             <h3>Social Media Links</h3>
             <div className="grid-2">
