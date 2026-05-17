@@ -3,11 +3,7 @@ import axios from 'axios';
 
 import { API_BASE_URL } from '../../config/api';
 
-// Get token from localStorage
-const getToken = () => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  return user?.token;
-};
+const getToken = () => localStorage.getItem('token');
 
 // Fetch all addresses
 export const fetchAddresses = createAsyncThunk(

@@ -59,9 +59,16 @@ exports.getProducts = async (req, res) => {
 
     let query = { isActive: { $ne: false } };
 
-    // 1. Intelligent Keyword Search
-    if (keyword && String(keyword).trim()) {
-      query.$text = { $search: String(keyword).trim() };
+    // 1. Keyword search (text index with regex fallback)
+    const keywordTrimmed = keyword && String(keyword).trim();
+    if (keywordTrimmed) {
+      const safe = escapeRegex(keywordTrimmed);
+      query.$or = [
+        { name: { $regex: safe, $options: 'i' } },
+        { description: { $regex: safe, $options: 'i' } },
+        { brand: { $regex: safe, $options: 'i' } },
+        { category: { $regex: safe, $options: 'i' } }
+      ];
     }
 
     // 2. Category & Brand Filtering
@@ -88,6 +95,7 @@ exports.getProducts = async (req, res) => {
     // 6. Special Tags
     if (todaysDeal === 'true') query.inTodaysDeal = true;
     if (newArrivals === 'true') query.inNewArrivals = true;
+    if (req.query.featured === 'true') query.isFeatured = true;
 
     // 7. Dynamic Sorting Logic
     let sortOption = {};
@@ -95,14 +103,12 @@ exports.getProducts = async (req, res) => {
     else if (sort === 'price-high') sortOption = { price: -1 };
     else if (sort === 'rating') sortOption = { ratings: -1 };
     else if (sort === 'popular') sortOption = { numOfReviews: -1 };
-    else if (keyword) sortOption = { score: { $meta: "textScore" } }; // Relevance ranking
     else sortOption = { isFeatured: -1, createdAt: -1 };
 
     const limit = Math.min(Math.max(Number(limitRaw) || 12, 1), 48);
     const skip = (Number(page) - 1) * limit;
 
     const products = await Product.find(query)
-      .select(keyword ? { score: { $meta: "textScore" } } : {})
       .sort(sortOption)
       .limit(limit)
       .skip(skip);
@@ -132,34 +138,60 @@ exports.getProducts = async (req, res) => {
   }
 };
 
+const mapSuggestionProduct = (p) => {
+  const price = p.variants?.length ? p.variants[0].price : p.price;
+  const mrp = p.variants?.length ? p.variants[0].mrp : (p.mrp || p.price);
+  const discount = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+  return {
+    id: p._id,
+    name: p.name,
+    category: p.category,
+    brand: p.brand,
+    image: p.images?.[0]?.url,
+    price,
+    mrp,
+    discount,
+    rating: Number(p.ratings) || 0,
+    numOfReviews: p.numOfReviews || 0
+  };
+};
+
 // Real-time Autocomplete Suggestions (Amazon Style)
 exports.getSearchSuggestions = async (req, res) => {
   try {
     const { q } = req.query;
-    if (!q || q.length < 2) return res.status(200).json({ success: true, suggestions: [] });
+    const allCategories = await Product.distinct('category', { isActive: { $ne: false } });
 
+    if (!q || q.length < 2) {
+      const featured = await Product.find({ isActive: { $ne: false } })
+        .sort({ isFeatured: -1, numOfReviews: -1, createdAt: -1 })
+        .limit(6)
+        .select('name category brand images price mrp variants ratings numOfReviews');
+
+      return res.status(200).json({
+        success: true,
+        suggestions: featured.map(mapSuggestionProduct),
+        meta: { categories: allCategories.filter(Boolean) }
+      });
+    }
+
+    const safe = escapeRegex(String(q).trim());
     const suggestions = await Product.find({
+      isActive: { $ne: false },
       $or: [
-        { name: { $regex: q, $options: 'i' } },
-        { brand: { $regex: q, $options: 'i' } },
-        { category: { $regex: q, $options: 'i' } }
-      ],
-      isActive: true
+        { name: { $regex: safe, $options: 'i' } },
+        { brand: { $regex: safe, $options: 'i' } },
+        { category: { $regex: safe, $options: 'i' } },
+        { description: { $regex: safe, $options: 'i' } }
+      ]
     })
-    .select('name category brand images price ratings')
-    .limit(8);
+      .select('name category brand images price mrp variants ratings numOfReviews')
+      .limit(8);
 
     res.status(200).json({
       success: true,
-      suggestions: suggestions.map(p => ({
-        id: p._id,
-        name: p.name,
-        category: p.category,
-        brand: p.brand,
-        image: p.images[0]?.url,
-        price: p.price,
-        rating: p.ratings
-      }))
+      suggestions: suggestions.map(mapSuggestionProduct),
+      meta: { categories: allCategories.filter(Boolean) }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

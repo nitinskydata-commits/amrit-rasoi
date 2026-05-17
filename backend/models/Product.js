@@ -191,6 +191,8 @@ const productSchema = new mongoose.Schema({
   }
 });
 
+productSchema.index({ name: 'text', description: 'text', brand: 'text', category: 'text' });
+
 // Auto-calculate ratings whenever reviews are updated
 productSchema.pre('save', function(next) {
   if (this.reviews && this.reviews.length > 0) {
