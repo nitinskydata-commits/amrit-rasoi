@@ -245,17 +245,27 @@ const EditProduct = () => {
     }));
   };
 
-  const addCustomValue = (attrId, val) => {
-    if (!val.trim()) return;
+  const handleAddAttributeValues = (attrId, rawValue) => {
+    if (!rawValue.trim()) return;
+    const parts = rawValue.split(',').map(v => v.trim()).filter(Boolean);
+    if (parts.length === 0) return;
+
     setSelectedAttrs(selectedAttrs.map(a => {
       if (a.attrId !== attrId) return a;
-      const cleanVal = val.trim();
       const currentValues = a.values || [];
-      const updatedValues = currentValues.includes(cleanVal) ? currentValues : [...currentValues, cleanVal];
+      const updatedValues = [...currentValues];
+      const currentSelected = a.selectedValues || [];
+      const updatedSelected = [...currentSelected];
+
+      parts.forEach(p => {
+        if (!updatedValues.includes(p)) updatedValues.push(p);
+        if (!updatedSelected.includes(p)) updatedSelected.push(p);
+      });
+
       return {
         ...a,
         values: updatedValues,
-        selectedValues: [...(a.selectedValues || []), cleanVal]
+        selectedValues: updatedSelected
       };
     }));
   };
@@ -728,7 +738,16 @@ const EditProduct = () => {
 
               {selectedAttrs.map(sa => (
                 <div key={sa.attrId} className="attr-section" style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '12px' }}>
-                  <div style={{ fontWeight: '700', fontSize: '13px', marginBottom: '8px', color: '#1e293b' }}>{sa.name} values:</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div style={{ fontWeight: '700', fontSize: '13px', color: '#1e293b' }}>{sa.name} values:</div>
+                    <button 
+                      type="button" 
+                      onClick={() => setSelectedAttrs(selectedAttrs.filter(a => a.attrId !== sa.attrId))}
+                      style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11px', cursor: 'pointer', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '3px' }}
+                    >
+                      🗑️ Delete Attribute
+                    </button>
+                  </div>
                   <div className="attr-chips-premium">
                     {(sa.values || []).map((v, i) => {
                       const isValSel = (sa.selectedValues || []).includes(v);
@@ -746,13 +765,13 @@ const EditProduct = () => {
                   <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                     <input 
                       type="text" 
-                      placeholder={`Type custom ${sa.name} value and press Enter`} 
+                      placeholder={`Enter values (e.g. 100g, 200g, 500g)`} 
                       id={`custom_val_${sa.attrId}`} 
                       style={{ flex: 1 }} 
                       onKeyDown={e => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
-                          addCustomValue(sa.attrId, e.target.value);
+                          handleAddAttributeValues(sa.attrId, e.target.value);
                           e.target.value = '';
                         }
                       }}
@@ -763,11 +782,11 @@ const EditProduct = () => {
                       style={{ background: '#4f46e5' }}
                       onClick={() => {
                         const input = document.getElementById(`custom_val_${sa.attrId}`);
-                        addCustomValue(sa.attrId, input.value);
+                        handleAddAttributeValues(sa.attrId, input.value);
                         input.value = '';
                       }}
                     >
-                      Add
+                      Set Values
                     </button>
                   </div>
                 </div>
