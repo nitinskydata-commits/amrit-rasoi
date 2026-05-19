@@ -174,7 +174,7 @@ const Home = () => {
     navigate(`/search?category=${encodeURIComponent(category)}`);
   };
 
-  const categoriesList = settings?.homepageCategories ? settings.homepageCategories.split(',').map(c => c.trim()) : ['Spices', 'Powders', 'Blends', 'Organic'];
+  const categoriesList = Array.isArray(settings?.homepageCategories) ? settings.homepageCategories.map(c => typeof c === 'string' ? c.trim() : c) : (typeof settings?.homepageCategories === 'string' ? settings.homepageCategories.split(',').map(c => c.trim()) : ['Spices', 'Powders', 'Blends', 'Organic']);
   
   const generateOverlayCards = () => {
     return categoriesList.slice(0, 4).map((cat, idx) => {

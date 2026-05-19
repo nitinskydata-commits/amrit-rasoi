@@ -246,7 +246,7 @@ const Header = () => {
             {isAuthenticated && (
               <>
                 <span style={{ color: 'rgba(255,255,255,0.25)', margin: '0 10px', fontSize: '14px' }}>|</span>
-                {(settings?.homepageCategories ? settings.homepageCategories.split(',') : ['Spices', 'Powders', 'Blends', 'Organic']).map((cat, idx) => (
+                {(Array.isArray(settings?.homepageCategories) ? settings.homepageCategories : (typeof settings?.homepageCategories === 'string' ? settings.homepageCategories.split(',') : ['Spices', 'Powders', 'Blends', 'Organic'])).map((cat, idx) => (
                   <span 
                     key={idx} 
                     className="nav-link" 
