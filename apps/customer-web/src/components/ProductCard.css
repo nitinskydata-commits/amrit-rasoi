@@ -250,40 +250,27 @@
 
 /* 🔥 AUTOMATED DISCOUNT ENGINE HIGHLIGHTS */
 .product-card.high-discount {
-  border: 1.5px solid #ff9900;
-  box-shadow: 0 4px 20px rgba(255, 153, 0, 0.12);
-  background: linear-gradient(to bottom, #ffffff, #fffdfa);
+  border: 1px solid #fed1bc; /* Elegant soft gold-orange tint */
+  box-shadow: 0 4px 16px rgba(230, 81, 0, 0.04);
+  background: #ffffff;
 }
 
-.product-card.high-discount::after {
-  content: 'STEAL DEAL';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(90deg, #ff9900, #ff5500);
-  color: white;
-  text-align: center;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  padding: 2px 0;
-  z-index: 5;
-}
+/* pseudo bottom element removed for pristine design spacing */
 
 .high-discount-badge {
-  background: linear-gradient(135deg, #e67e22, #d35400) !important;
+  background: linear-gradient(135deg, #e63946 0%, #d62828 100%) !important; /* Premium crimson-ruby red */
   color: white !important;
   font-weight: 800 !important;
-  padding: 4px 10px !important;
+  padding: 4px 8px !important;
   border-radius: 4px !important;
   font-size: 11px !important;
-  box-shadow: 0 2px 6px rgba(211, 84, 0, 0.4);
-  animation: pulse-steal-deal 2s infinite ease-in-out;
+  box-shadow: 0 2px 8px rgba(214, 40, 40, 0.25);
+  letter-spacing: 0.5px;
+  animation: pulse-steal-deal 2.5s infinite ease-in-out;
 }
 
 @keyframes pulse-steal-deal {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.04); }
-  100% { transform: scale(1); }
+  0% { opacity: 0.95; }
+  50% { opacity: 0.85; }
+  100% { opacity: 0.95; }
 }
