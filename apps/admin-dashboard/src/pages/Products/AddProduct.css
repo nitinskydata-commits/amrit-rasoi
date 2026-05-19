@@ -681,3 +681,55 @@
   }
 }
 
+/* Button & interactive additions */
+.btn-generate {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-generate:hover {
+  background: #4338ca;
+}
+
+.btn-add-row {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px dashed #cbd5e1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 14px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.btn-add-row:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.btn-remove-row {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.btn-remove-row:hover {
+  color: #b91c1c;
+}
+
+
