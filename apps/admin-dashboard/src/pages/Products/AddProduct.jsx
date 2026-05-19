@@ -73,9 +73,8 @@ const AddProduct = () => {
   useEffect(() => {
     fetchCategories();
     fetchAttributes();
-    // Default mock configuration for demo/reference
-    setMockAttributes();
   }, []);
+
 
   const fetchCategories = async () => {
     try {
@@ -116,31 +115,6 @@ const AddProduct = () => {
       ]);
     }
   };
-
-  // Set default configurations so it works perfectly as reference/demo
-  const setMockAttributes = () => {
-    setSelectedAttrs([
-      {
-        attrId: 'attr1',
-        name: 'Color',
-        values: ['Red', 'Blue', 'Black'],
-        selectedValues: ['Red', 'Blue', 'Black']
-      },
-      {
-        attrId: 'attr2',
-        name: 'Size',
-        values: ['S', 'M', 'L', 'XL'],
-        selectedValues: ['S', 'M', 'L', 'XL']
-      }
-    ]);
-  };
-
-  // Generate mock variants immediately when attributes are loaded/set
-  useEffect(() => {
-    if (selectedAttrs.length > 0) {
-      generateVariantsFromAttrs(selectedAttrs);
-    }
-  }, [selectedAttrs.length === 0]);
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
   
