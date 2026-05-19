@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # ⚙️ API Gateway & App Servers metrics
+  - job_name: 'backend-api'
+    metrics_path: '/api/v1/metrics'
+    static_configs:
+      - targets: ['backend-api-1:5000', 'backend-api-2:5000']
+
+  # ⚡ Redis cache metrics (via redis_exporter)
+  - job_name: 'redis-cache'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  # 📥 Background Queue worker metrics
+  - job_name: 'queue-worker'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['background-worker:5001']

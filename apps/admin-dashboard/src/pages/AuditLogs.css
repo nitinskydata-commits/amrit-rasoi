@@ -1,0 +1,262 @@
+/* 🛡️ Amrit Rasoi Compliance Timeline Stylesheet */
+
+.audit-logs-page {
+  padding: 10px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.toolbar-card {
+  padding: 20px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+}
+
+.toolbar-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #f8f9f9;
+  border: 1px solid #d5dbdb;
+  border-radius: 8px;
+  padding: 4px 12px;
+  width: 450px;
+}
+
+.search-box .icon {
+  color: #bdc3c7;
+  margin-right: 10px;
+}
+
+.search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  flex: 1;
+  font-size: 13.5px;
+  color: #2c3e50;
+}
+
+.btn-search {
+  background: #1a5276;
+  color: #ffffff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filters-group {
+  display: flex;
+  gap: 12px;
+}
+
+.filter-select {
+  display: flex;
+  align-items: center;
+  background: #f8f9f9;
+  border: 1px solid #d5dbdb;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.filter-select .icon {
+  color: #7f8c8d;
+  margin-right: 8px;
+}
+
+.filter-select select {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: #34495e;
+}
+
+.logs-grid-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.timeline-container {
+  overflow-x: auto;
+}
+
+.timeline-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.timeline-container th {
+  background: #f8f9f9;
+  padding: 14px 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #7f8c8d;
+  text-transform: uppercase;
+  text-align: left;
+  border-bottom: 1px solid #e5e8e8;
+}
+
+.timeline-container td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f2f4f4;
+  font-size: 13.5px;
+  color: #2c3e50;
+  vertical-align: middle;
+}
+
+.operator-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.operator-avatar {
+  width: 28px;
+  height: 28px;
+  background: #1a5276;
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.action-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.badge-create { background: #eaf2f8; color: #2980b9; }
+.badge-update { background: #fef9e7; color: #d4ac0d; }
+.badge-delete { background: #fadbd8; color: #c0392b; }
+.badge-system { background: #f4ecf7; color: #8e44ad; }
+
+.target-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.target-col strong {
+  font-size: 13px;
+  color: #34495e;
+}
+
+.target-col span {
+  font-size: 11px;
+  color: #95a5a6;
+}
+
+.btn-inspect {
+  background: #f4f6f7;
+  color: #5d6d7e;
+  border: 1px solid #d5dbdb;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.btn-inspect:hover {
+  background: #ebf5fb;
+  color: #2980b9;
+  border-color: #2980b9;
+}
+
+.observability-loading {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.observability-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1a5276;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Modal Details */
+.log-modal-container {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 800px;
+  max-width: 90%;
+  box-shadow: 0 10px 45px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: modalSlideUp 0.3s ease-out;
+}
+
+.log-metadata-box {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  padding: 16px;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.json-diffs-flex {
+  display: flex;
+  gap: 16px;
+}
+
+.json-block {
+  flex: 1;
+  background: #2c3e50;
+  border-radius: 8px;
+  padding: 16px;
+  color: #ecf0f1;
+}
+
+.json-block h4 {
+  margin: 0 0 12px;
+  color: #1abc9c;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.json-block pre {
+  margin: 0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11.5px;
+  overflow-x: auto;
+  max-height: 250px;
+  white-space: pre-wrap;
+}

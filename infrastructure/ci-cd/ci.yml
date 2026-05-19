@@ -1,0 +1,57 @@
+name: Monorepo Integration & Compliance CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - name: Checkout Repository Codebase
+      uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install All Workspaces Dependencies
+      run: npm install
+
+    - name: Lint Verification & Compliance check
+      run: |
+        npm run lint --if-present --workspaces
+
+    - name: Run Backend Integration Unit Tests
+      run: |
+        npm test --workspace=backend/api-gateway --if-present
+
+    - name: Validate Customer Web Compile
+      run: npm run build --workspace=apps/customer-web
+
+    - name: Validate Admin Dashboard Compile
+      run: npm run build --workspace=apps/admin-dashboard
+
+    - name: Validate Seller Portal Compile
+      run: npm run build --workspace=apps/seller-portal
+
+    - name: Validate Warehouse Dashboard Compile
+      run: npm run build --workspace=apps/warehouse-dashboard
+
+    - name: Validate Delivery Partner App Compile
+      run: npm run build --workspace=apps/delivery-app
+
+    - name: Validate Customer Mobile App Compile
+      run: npm run build --workspace=apps/customer-mobile
+
+    - name: Validate Staff Ops Panel Compile
+      run: npm run build --workspace=apps/internal-ops-panel

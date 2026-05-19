@@ -1,0 +1,242 @@
+.notification-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.notification-trigger-btn {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.notification-trigger-btn:hover {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+
+.bell-badge-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background-color: #ef4444;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+}
+
+.notification-dropdown-box {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  width: 320px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.dropdown-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+}
+
+.dropdown-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.unread-banner {
+  font-size: 10px;
+  background-color: #fee2e2;
+  color: #ef4444;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  font-weight: 600;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.btn-action-link {
+  background: none;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: #3b82f6;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.btn-action-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.notification-list-body {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.notification-card-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  background-color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.notification-card-item:hover {
+  background-color: #f8fafc;
+}
+
+/* Color Coding Left Border */
+.notification-card-item.security {
+  border-left: 3px solid #dc2626;
+}
+
+.notification-card-item.stock,
+.notification-card-item.inventory {
+  border-left: 3px solid #d97706;
+}
+
+.notification-card-item.payout,
+.notification-card-item.finance {
+  border-left: 3px solid #059669;
+}
+
+.notification-card-item.system {
+  border-left: 3px solid #3b82f6;
+}
+
+.notification-card-item.unread {
+  background-color: #f0f9ff;
+}
+
+.notification-card-item.unread:hover {
+  background-color: #e0f2fe;
+}
+
+.notif-inner {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+}
+
+.notif-icon {
+  font-size: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.notif-icon.security {
+  color: #dc2626;
+}
+
+.notif-icon.stock {
+  color: #d97706;
+}
+
+.notif-icon.payout {
+  color: #059669;
+}
+
+.notif-icon.system {
+  color: #3b82f6;
+}
+
+.notif-content-area p {
+  margin: 0;
+  font-size: 12px;
+  color: #334155;
+  line-height: 1.4;
+}
+
+.notif-time-stamp {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 4px;
+  display: block;
+}
+
+.notif-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+}
+
+.action-dot-btn {
+  width: 8px;
+  height: 8px;
+  background-color: #3b82f6;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.action-trash-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s, color 0.2s;
+  font-size: 11px;
+}
+
+.action-trash-btn:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.empty-inbox {
+  padding: 32px 16px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.bell-hollow-icon {
+  font-size: 32px;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+}
+
+.empty-inbox p {
+  margin: 0;
+  font-size: 12px;
+}

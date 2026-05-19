@@ -1,13 +1,23 @@
 {
-  "name": "amrit-rasoi",
+  "name": "sbmi-platform",
   "version": "1.0.0",
-  "description": "SBMI E-commerce Platform",
+  "workspaces": [
+    "apps/*",
+    "server"
+  ],
+  "description": "SBMI Enterprise E-Commerce Platform",
   "scripts": {
-    "server": "cd backend && npm start",
-    "client": "cd frontend && npm start",
-    "admin": "cd admin && npm start",
-    "start": "concurrently \"npm run server\" \"npm run client\" \"npm run admin\"",
-    "install-all": "cd backend && npm install && cd ../frontend && npm install && cd ../admin && npm install"
+    "server": "npm start --workspace=server",
+    "server:dev": "npm run dev --workspace=server",
+    "client": "npm start --workspace=apps/customer-web",
+    "admin": "npm start --workspace=apps/admin-dashboard",
+    "seller": "npm start --workspace=apps/seller-portal",
+    "warehouse": "npm start --workspace=apps/warehouse-dashboard",
+    "delivery": "npm start --workspace=apps/delivery-app",
+    "mobile": "npm start --workspace=apps/customer-mobile",
+    "ops": "npm start --workspace=apps/internal-ops-panel",
+    "start": "concurrently \"npm run server\" \"npm run client\" \"npm run admin\" \"npm run seller\" \"npm run warehouse\" \"npm run delivery\" \"npm run mobile\" \"npm run ops\"",
+    "install-all": "npm install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

@@ -1,7 +1,43 @@
+# Dependencies
 node_modules/
-.env
-frontend/node_modules/
-backend/node_modules/
 
-# Local secrets (use backend/config/config.env.example as a template)
-backend/config/config.env
+# Build artifacts
+build/
+build-*/
+dist/
+
+# Environment files (keep examples)
+.env
+*.env
+!*.env.example
+server/config/config.env
+
+# Uploads (local storage fallback)
+server/uploads/*
+!server/uploads/.gitkeep
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+
+# Backups
+src_backup/
+*_backup/
+
+# Misc
+CascadeProjects/
+.cursor/
