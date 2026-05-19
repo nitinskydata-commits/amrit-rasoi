@@ -63,7 +63,7 @@ const variantSchema = new mongoose.Schema({
   },
   isActive: {
     type: Boolean,
-    default: true          // Set false automatically when stock reaches 0
+    default: true
   },
   sku: String,
   barcode: String,
@@ -81,7 +81,15 @@ const variantSchema = new mongoose.Schema({
     height: Number,
     unit: { type: String, default: 'cm' }
   },
-  shippingWeight: Number   // Weight in grams for shipping calculation
+  shippingWeight: Number,
+  taxRate: { type: Number, default: 0 },
+  lowStockThreshold: { type: Number, default: 5 },
+  shippingClass: { type: String, default: 'standard' },
+  isFragile: { type: Boolean, default: false },
+  warehouseStock: [{
+    warehouse: { type: mongoose.Schema.Types.ObjectId, ref: 'Warehouse' },
+    quantity: { type: Number, default: 0 }
+  }]
 });
 
 const productSchema = new mongoose.Schema({
@@ -95,6 +103,22 @@ const productSchema = new mongoose.Schema({
     type: String,
     default: 'platform',
     index: true
+  },
+  // Product Type System
+  productType: {
+    type: String,
+    enum: ['simple', 'variable', 'digital', 'subscription', 'bundle'],
+    default: 'variable'
+  },
+  // Publish Status Workflow
+  status: {
+    type: String,
+    enum: ['draft', 'published', 'scheduled', 'hidden', 'archived'],
+    default: 'draft'
+  },
+  scheduledPublishDate: {
+    type: Date,
+    default: null
   },
   name: {
     type: String,
@@ -119,6 +143,18 @@ const productSchema = new mongoose.Schema({
   seoDescription: {
     type: String,
     default: ''
+  },
+  seoKeywords: [{
+    type: String,
+    trim: true
+  }],
+  canonicalUrl: {
+    type: String,
+    default: ''
+  },
+  ogImage: {
+    publicId: String,
+    url: String
   },
 
   // Tags for search & recommendations
@@ -170,24 +206,14 @@ const productSchema = new mongoose.Schema({
     url: String
   }],
   
-  // Expanded category list to support all product types
+  // Dynamic category (no enum constraint — managed via Category collection)
   category: {
     type: String,
-    required: [true, 'Please select product category'],
-    enum: [
-      // Grocery / Spices
-      'Spices', 'Powders', 'Blends', 'Organic', 'Masalas', 'Seeds', 'Herbs', 'Bulk', 'Grocery',
-      // Fashion
-      'Fashion', 'Clothing', 'Footwear', 'Bags', 'Accessories',
-      // Electronics
-      'Electronics', 'Mobiles', 'Laptops', 'Tablets', 'Cameras',
-      // Furniture & Home
-      'Furniture', 'Home Decor', 'Kitchen',
-      // Beauty & Cosmetics
-      'Cosmetics', 'Beauty', 'Skincare', 'Haircare',
-      // Other
-      'Books', 'Sports', 'Toys', 'Other'
-    ]
+    required: [true, 'Please select product category']
+  },
+  subcategory: {
+    type: String,
+    default: ''
   },
   
   brand: {
@@ -267,6 +293,18 @@ const productSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+
+  // Digital Product Assets
+  digitalAssets: {
+    files: [{
+      name: String,
+      url: String,
+      size: Number
+    }],
+    licenseKey: { type: String, default: '' },
+    downloadLimit: { type: Number, default: -1 },
+    expiryDays: { type: Number, default: 0 }
   },
   
   // Real Reviews and Ratings

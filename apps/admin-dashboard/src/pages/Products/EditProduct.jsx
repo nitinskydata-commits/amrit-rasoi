@@ -1,541 +1,301 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Package, Box, Image as ImageIcon, 
-  ArrowLeft, UploadCloud, Plus, X, 
-  Percent, ShieldCheck, Activity
-} from 'lucide-react';
 import { API_BASE_URL } from '../../config/api';
-import './AddProduct.css'; // Reuses the premium dark CSS
+import './AddProduct.css';
+
+const STEPS = ['Basic Info','Product Type','Category','Attributes','Generate Variants','Variant Details','Media','Specifications','SEO','Publish'];
+const PRODUCT_TYPES = [
+  { id:'simple', icon:'📦', name:'Simple', desc:'Single item, no variants' },
+  { id:'variable', icon:'🔀', name:'Variable', desc:'Multiple variants' },
+  { id:'digital', icon:'💾', name:'Digital', desc:'Downloadable files' },
+  { id:'subscription', icon:'🔄', name:'Subscription', desc:'Recurring billing' },
+  { id:'bundle', icon:'🎁', name:'Bundle', desc:'Combo of products' },
+];
 
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [fetchingProduct, setFetchingProduct] = useState(true);
-  const fileInputRef = useRef(null);
-  
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    category: 'Spices',
-    brand: 'Amrit Rasoi',
-    isFeatured: false,
-    inTodaysDeal: false,
-    inNewArrivals: false
+  const [fetching, setFetching] = useState(true);
+  const fileRef = useRef(null);
+
+  const [form, setForm] = useState({
+    name:'', description:'', brand:'Amrit Rasoi', productType:'variable',
+    category:'', subcategory:'', status:'draft',
+    seoTitle:'', seoDescription:'', seoKeywords:'', canonicalUrl:'',
+    isFeatured:false, inTodaysDeal:false, inNewArrivals:false,
+    price:'', mrp:'', stock:'',
   });
-
-  // Variant State (Advanced Architecture)
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState('');
+  const [specs, setSpecs] = useState([{key:'',value:''}]);
+  const [categories, setCategories] = useState([]);
+  const [globalAttrs, setGlobalAttrs] = useState([]);
+  const [selectedAttrs, setSelectedAttrs] = useState([]);
   const [variants, setVariants] = useState([]);
-
-  // Marketing & Discount Engine State
-  const [discountRules, setDiscountRules] = useState([]);
-
-  // Global Media
   const [images, setImages] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
+  const [previews, setPreviews] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
-  const [keepExistingImages, setKeepExistingImages] = useState(true);
 
-  // Fetch product data
   useEffect(() => {
-    fetchProductDetails();
+    fetchCategories();
+    fetchAttributes();
+    fetchProduct();
   }, [id]);
 
-  const fetchProductDetails = async () => {
+  const fetchCategories = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const { data } = await axios.get(
-        `${API_BASE_URL}/product/${id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (data.success) {
-        const product = data.product;
-        
-        setFormData({
-          name: product.name || '',
-          description: product.description || '',
-          category: product.category || 'Spices',
-          brand: product.brand || 'Amrit Rasoi',
-          isFeatured: !!product.isFeatured,
-          inTodaysDeal: !!product.inTodaysDeal,
-          inNewArrivals: !!product.inNewArrivals
+      const {data} = await axios.get(`${API_BASE_URL}/admin/categories`, {headers:{Authorization:`Bearer ${token}`}});
+      if(data.success) setCategories(data.categories);
+    } catch(e) { console.error(e); }
+  };
+  const fetchAttributes = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const {data} = await axios.get(`${API_BASE_URL}/admin/attributes`, {headers:{Authorization:`Bearer ${token}`}});
+      if(data.success) setGlobalAttrs(data.attributes);
+    } catch(e) { console.error(e); }
+  };
+  const fetchProduct = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const {data} = await axios.get(`${API_BASE_URL}/product/${id}`, {headers:{Authorization:`Bearer ${token}`}});
+      if(data.success) {
+        const p = data.product;
+        setForm({
+          name: p.name||'', description: p.description||'', brand: p.brand||'Amrit Rasoi',
+          productType: p.productType||'variable', category: p.category||'', subcategory: p.subcategory||'',
+          status: p.status||'draft', seoTitle: p.seoTitle||'', seoDescription: p.seoDescription||'',
+          seoKeywords: (p.seoKeywords||[]).join(', '), canonicalUrl: p.canonicalUrl||'',
+          isFeatured: !!p.isFeatured, inTodaysDeal: !!p.inTodaysDeal, inNewArrivals: !!p.inNewArrivals,
+          price: p.price||'', mrp: p.mrp||'', stock: p.stock||'',
         });
-
-        if (product.variants && product.variants.length > 0) {
-          const mappedVariants = product.variants.map(v => {
-            const attr = v.attributes && v.attributes.length > 0 ? v.attributes[0] : {};
-            return {
-              ...v,
-              id: v._id || crypto.randomUUID(),
-              attributeName: attr.name || 'Weight',
-              attributeValue: attr.value || v.weight || '',
-              price: v.price || '',
-              mrp: v.mrp || '',
-              stock: v.stock !== undefined ? v.stock : 0,
-              sku: v.sku || '',
-              barcode: v.barcode || '',
-              files: [],
-              existingImages: v.images || []
-            };
-          });
-          setVariants(mappedVariants);
-        } else {
-          setVariants([{ 
-            id: crypto.randomUUID(), attributeName: 'Weight', attributeValue: '500g', 
-            price: '', mrp: '', stock: '', sku: '', barcode: '', files: [], existingImages: [] 
-          }]);
-        }
-
-        if (product.images && product.images.length > 0) {
-          setExistingImages(product.images);
-        }
-        
-        if (product.discountRules) {
-          setDiscountRules(product.discountRules.map(r => ({ ...r, id: r._id || crypto.randomUUID() })));
+        setTags(p.tags||[]);
+        setSpecs(p.specifications?.length ? p.specifications : [{key:'',value:''}]);
+        if(p.images?.length) setExistingImages(p.images);
+        if(p.variants?.length) {
+          setVariants(p.variants.map((v,i)=>({
+            id: v._id || `v_${i}`,
+            attributes: v.attributes||[{name:'Variant',value:''}],
+            label: (v.attributes||[]).map(a=>a.value).join(' / '),
+            sku: v.sku||'', barcode: v.barcode||'', price: v.price||'', mrp: v.mrp||'',
+            stock: v.stock!==undefined?v.stock:0, taxRate: v.taxRate||0,
+            shippingWeight: v.shippingWeight||'', shippingClass: v.shippingClass||'standard',
+            isFragile: v.isFragile||false, dimensions: v.dimensions||{length:'',width:'',height:''},
+            files:[], existingImages: v.images||[]
+          })));
         }
       }
-    } catch (error) {
-      console.error('Error fetching product:', error);
-      alert('Failed to load product details');
-    } finally {
-      setFetchingProduct(false);
-    }
+    } catch(e) { console.error(e); alert('Failed to load product'); }
+    finally { setFetching(false); }
   };
 
-  // Handlers
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
+  const set = (k,v) => setForm(p=>({...p,[k]:v}));
+  const addTag = () => { if(tagInput.trim()) { setTags([...tags,tagInput.trim()]); setTagInput(''); }};
+  const removeTag = i => setTags(tags.filter((_,idx)=>idx!==i));
+  const addSpec = () => setSpecs([...specs,{key:'',value:''}]);
+  const updateSpec = (i,f,v) => { const s=[...specs]; s[i][f]=v; setSpecs(s); };
+  const removeSpec = i => setSpecs(specs.filter((_,idx)=>idx!==i));
+
+  const toggleAttr = (attr) => {
+    const exists = selectedAttrs.find(a=>a.attrId===attr._id);
+    if(exists) setSelectedAttrs(selectedAttrs.filter(a=>a.attrId!==attr._id));
+    else setSelectedAttrs([...selectedAttrs,{attrId:attr._id,name:attr.name,values:attr.values||[],selectedValues:[]}]);
+  };
+  const toggleAttrValue = (attrId,val) => {
+    setSelectedAttrs(selectedAttrs.map(a=>{
+      if(a.attrId!==attrId) return a;
+      const sv=a.selectedValues||[];
+      return {...a,selectedValues:sv.includes(val)?sv.filter(v=>v!==val):[...sv,val]};
     }));
   };
-
-  const handleVariantChange = (id, field, value) => {
-    setVariants(variants.map(v => v.id === id ? { ...v, [field]: value } : v));
-  };
-
-  const addVariant = () => {
-    setVariants([...variants, { 
-      id: crypto.randomUUID(), attributeName: 'Weight', attributeValue: '', 
-      price: '', mrp: '', stock: '', sku: '', barcode: '', files: [], existingImages: [] 
-    }]);
-  };
-
-  const removeVariant = (id) => {
-    if (variants.length > 1) {
-      setVariants(variants.filter(v => v.id !== id));
-    }
-  };
-
-  const handleVariantFileChange = (id, e) => {
-    const files = Array.from(e.target.files);
-    setVariants(variants.map(v => v.id === id ? { ...v, files } : v));
-  };
-
-  const removeVariantExistingImage = (variantId, imageIndex) => {
-    setVariants(variants.map(v => {
-      if (v.id === variantId) {
-        return {
-          ...v,
-          existingImages: v.existingImages.filter((_, i) => i !== imageIndex)
-        };
-      }
-      return v;
+  const addCustomValue = (attrId,val) => {
+    if(!val.trim()) return;
+    setSelectedAttrs(selectedAttrs.map(a=>{
+      if(a.attrId!==attrId) return a;
+      return {...a,values:[...a.values,val.trim()],selectedValues:[...(a.selectedValues||[]),val.trim()]};
     }));
   };
-
-  const handleGlobalImageDrop = (e) => {
-    e.preventDefault();
-    const files = Array.from(e.dataTransfer?.files || e.target.files);
-    setImages(prev => [...prev, ...files]);
-    const previews = files.map(file => URL.createObjectURL(file));
-    setImagePreviews(prev => [...prev, ...previews]);
+  const generateVariants = () => {
+    const aw = selectedAttrs.filter(a=>(a.selectedValues||[]).length>0);
+    if(!aw.length) return;
+    const combos = aw.reduce((acc,attr)=>{
+      if(!acc.length) return attr.selectedValues.map(v=>[{name:attr.name,value:v}]);
+      const r=[]; acc.forEach(c=>attr.selectedValues.forEach(v=>r.push([...c,{name:attr.name,value:v}]))); return r;
+    },[]);
+    setVariants(combos.map((attrs,i)=>({
+      id:`v_${Date.now()}_${i}`, attributes:attrs, label:attrs.map(a=>a.value).join(' / '),
+      sku:`${(form.brand||'SKU').substring(0,3).toUpperCase()}-${attrs.map(a=>a.value.substring(0,3).toUpperCase()).join('-')}-${Math.random().toString(36).substring(2,5).toUpperCase()}`,
+      barcode:'',price:'',mrp:'',stock:'',taxRate:0,shippingWeight:'',shippingClass:'standard',isFragile:false,
+      dimensions:{length:'',width:'',height:''},files:[],existingImages:[]
+    })));
   };
-
-  const removeGlobalImage = (index) => {
-    setImages(images.filter((_, i) => i !== index));
-    setImagePreviews(imagePreviews.filter((_, i) => i !== index));
+  const addManualVariant = () => {
+    setVariants([...variants,{id:`v_${Date.now()}`,attributes:[{name:'Variant',value:''}],label:'',sku:'',barcode:'',price:'',mrp:'',stock:'',taxRate:0,shippingWeight:'',shippingClass:'standard',isFragile:false,dimensions:{length:'',width:'',height:''},files:[],existingImages:[]}]);
   };
+  const updateVariant = (id,f,v) => setVariants(variants.map(vr=>vr.id===id?{...vr,[f]:v}:vr));
+  const removeVariant = id => setVariants(variants.filter(v=>v.id!==id));
+  const handleVariantFiles = (id,e) => { setVariants(variants.map(v=>v.id===id?{...v,files:Array.from(e.target.files)}:v)); };
 
-  const removeExistingImage = (index) => {
-    setExistingImages(existingImages.filter((_, i) => i !== index));
+  const handleMedia = (e) => {
+    const files = Array.from(e.dataTransfer?.files||e.target.files);
+    setImages(p=>[...p,...files]); setPreviews(p=>[...p,...files.map(f=>URL.createObjectURL(f))]);
   };
+  const removeMedia = i => { setImages(images.filter((_,idx)=>idx!==i)); setPreviews(previews.filter((_,idx)=>idx!==i)); };
+  const removeExisting = i => setExistingImages(existingImages.filter((_,idx)=>idx!==i));
 
-  const addDiscountRule = () => {
-    setDiscountRules([...discountRules, {
-      id: crypto.randomUUID(), type: 'PERCENTAGE', value: '', minQuantity: 2, isActive: true
-    }]);
-  };
-
-  const removeDiscountRule = (id) => {
-    setDiscountRules(discountRules.filter(r => r.id !== id));
-  };
-
-  const updateDiscountRule = (id, field, value) => {
-    setDiscountRules(discountRules.map(r => r.id === id ? { ...r, [field]: value } : r));
-  };
-
-  // Submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Validation
-    if (variants.length === 0) {
-      alert('Please add at least one variant!');
-      return;
-    }
-    for (let i = 0; i < variants.length; i++) {
-      if (!variants[i].attributeValue || !variants[i].price || !variants[i].mrp || variants[i].stock === '') {
-        alert(`Variant ${i + 1}: Please fill all required fields (Attribute Value, Price, MRP, Stock)`);
-        return;
-      }
-    }
-
+  const handleSubmit = async () => {
     setLoading(true);
-
     try {
       const token = localStorage.getItem('adminToken');
-      const formDataToSend = new FormData();
-      
-      Object.keys(formData).forEach(key => {
-        formDataToSend.append(key, formData[key]);
-      });
+      const fd = new FormData();
+      Object.keys(form).forEach(k=>fd.append(k,form[k]));
+      fd.append('tags',tags.join(','));
+      fd.append('specifications',JSON.stringify(specs.filter(s=>s.key)));
+      fd.append('existingImages',JSON.stringify(existingImages));
 
-      if (variants.length > 0) {
-        formDataToSend.append('price', variants[0].price);
-        formDataToSend.append('mrp', variants[0].mrp);
-        formDataToSend.append('stock', variants[0].stock);
+      if(form.productType==='simple') {
+        fd.append('hasVariants','false');
+      } else {
+        fd.append('hasVariants','true');
+        const mapped=variants.map(v=>({
+          _id:v._id, attributes:v.attributes, price:v.price, mrp:v.mrp, stock:v.stock,
+          sku:v.sku, barcode:v.barcode, taxRate:v.taxRate, shippingWeight:v.shippingWeight,
+          shippingClass:v.shippingClass, isFragile:v.isFragile, dimensions:v.dimensions,
+          images:v.existingImages||[]
+        }));
+        fd.append('variants',JSON.stringify(mapped));
       }
+      images.forEach(img=>fd.append('images',img));
+      variants.forEach((v,i)=>{if(v.files?.length) v.files.forEach(f=>fd.append(`variant_images_${i}`,f));});
 
-      const mappedVariants = variants.map(v => ({
-        _id: v._id,
-        attributes: [{ name: v.attributeName || 'Variant', value: v.attributeValue || '' }],
-        price: v.price,
-        mrp: v.mrp,
-        stock: v.stock,
-        sku: v.sku,
-        barcode: v.barcode,
-        images: v.existingImages || []
-      }));
-
-      formDataToSend.append('variants', JSON.stringify(mappedVariants));
-      formDataToSend.append('discountRules', JSON.stringify(discountRules.filter(r => r.isActive)));
-      formDataToSend.append('keepExistingImages', keepExistingImages);
-
-      if (keepExistingImages) {
-        formDataToSend.append('existingImages', JSON.stringify(existingImages));
-      }
-
-      images.forEach(image => {
-        formDataToSend.append('images', image);
-      });
-
-      variants.forEach((variant, index) => {
-        if (variant.files && variant.files.length > 0) {
-          variant.files.forEach(file => {
-            formDataToSend.append(`variant_images_${index}`, file);
-          });
-        }
-      });
-
-      const { data } = await axios.put(
-        `${API_BASE_URL}/admin/product/${id}`,
-        formDataToSend,
-        { headers: { 'Content-Type': 'multipart/form-data', 'Authorization': `Bearer ${token}` } }
-      );
-
-      if (data.success) {
-        alert('Product updated successfully!');
-        navigate('/products');
-      }
-    } catch (error) {
-      console.error('Error updating product:', error);
-      alert(error.response?.data?.message || 'Failed to update product');
-    } finally {
-      setLoading(false);
-    }
+      const {data}=await axios.put(`${API_BASE_URL}/admin/product/${id}`,fd,
+        {headers:{'Content-Type':'multipart/form-data','Authorization':`Bearer ${token}`}});
+      if(data.success) { alert('Product updated!'); navigate('/products'); }
+    } catch(e) { alert(e.response?.data?.message||'Failed to update'); }
+    finally { setLoading(false); }
   };
 
-  if (fetchingProduct) {
-    return (
-      <div className="add-product-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <p style={{ color: '#8b949e' }}>Loading expert mode editor...</p>
-      </div>
-    );
-  }
+  if(fetching) return <div className="product-wizard" style={{textAlign:'center',padding:60,color:'#888'}}>Loading product...</div>;
+
+  const renderStep = () => {
+    switch(step) {
+      case 0: return (<div className="wizard-card"><h2>📋 Basic Information</h2>
+        <div className="wz-form-group"><label>Product Title *</label><input type="text" value={form.name} onChange={e=>set('name',e.target.value)} /></div>
+        <div className="wz-form-group"><label>Description</label><textarea value={form.description} onChange={e=>set('description',e.target.value)} /></div>
+        <div className="wz-form-row">
+          <div className="wz-form-group"><label>Brand</label><input type="text" value={form.brand} onChange={e=>set('brand',e.target.value)} /></div>
+          <div className="wz-form-group"><label>Tags</label>
+            <div style={{display:'flex',gap:8}}><input type="text" value={tagInput} onChange={e=>setTagInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&(e.preventDefault(),addTag())} placeholder="Press Enter" />
+            <button type="button" onClick={addTag} className="btn-generate" style={{padding:'8px 14px',fontSize:12}}>Add</button></div>
+            <div className="attr-chips" style={{marginTop:8}}>{tags.map((t,i)=><span key={i} className="attr-chip" onClick={()=>removeTag(i)}>{t} ✕</span>)}</div>
+          </div>
+        </div></div>);
+
+      case 1: return (<div className="wizard-card"><h2>🏷️ Product Type</h2>
+        <div className="type-grid">{PRODUCT_TYPES.map(t=>(<div key={t.id} className={`type-card ${form.productType===t.id?'selected':''}`} onClick={()=>set('productType',t.id)}>
+          <span className="type-icon">{t.icon}</span><div className="type-name">{t.name}</div><div className="type-desc">{t.desc}</div></div>))}</div></div>);
+
+      case 2: return (<div className="wizard-card"><h2>📂 Category</h2><div className="wz-form-row">
+        <div className="wz-form-group"><label>Category *</label>
+          {categories.length>0?<select value={form.category} onChange={e=>set('category',e.target.value)}><option value="">Select</option>{categories.map(c=><option key={c._id} value={c.name}>{c.name}</option>)}</select>
+          :<input type="text" value={form.category} onChange={e=>set('category',e.target.value)} placeholder="Type category" />}
+        </div>
+        <div className="wz-form-group"><label>Subcategory</label><input type="text" value={form.subcategory} onChange={e=>set('subcategory',e.target.value)} /></div>
+        </div></div>);
+
+      case 3: return (<div className="wizard-card"><h2>🎨 Attributes</h2>
+        {form.productType==='simple'?<p style={{color:'#4CAF50'}}>✅ Simple product — skip this step.</p>:<>
+        <div className="attr-chips">{globalAttrs.map(a=><span key={a._id} className={`attr-chip ${selectedAttrs.find(s=>s.attrId===a._id)?'active':''}`} onClick={()=>toggleAttr(a)}>{a.name}</span>)}
+        {globalAttrs.length===0&&<span style={{color:'#999',fontSize:13}}>No global attributes. Add custom values below or create in Settings.</span>}</div>
+        {selectedAttrs.map(sa=>(<div key={sa.attrId} style={{marginTop:16,padding:16,background:'#fafafa',borderRadius:8,border:'1px solid #eee'}}>
+          <label style={{fontWeight:600}}>{sa.name}:</label>
+          <div className="attr-chips" style={{marginTop:8}}>{(sa.values||[]).map((v,i)=><span key={i} className={`attr-chip ${(sa.selectedValues||[]).includes(v)?'active':''}`} onClick={()=>toggleAttrValue(sa.attrId,v)}>{v}</span>)}</div>
+          <div style={{display:'flex',gap:8,marginTop:8}}><input type="text" placeholder={`Custom ${sa.name}...`} id={`c_${sa.attrId}`} style={{flex:1,border:'1px solid #ddd',borderRadius:4,padding:'6px 10px',fontSize:13}} />
+          <button type="button" className="btn-generate" style={{padding:'6px 12px',fontSize:12}} onClick={()=>{const el=document.getElementById(`c_${sa.attrId}`);addCustomValue(sa.attrId,el.value);el.value='';}}>Add</button></div>
+        </div>))}</>}</div>);
+
+      case 4: return (<div className="wizard-card"><h2>⚡ Generate Variants</h2>
+        {form.productType==='simple'?<p style={{color:'#4CAF50'}}>✅ Simple product — skip.</p>:<>
+        {selectedAttrs.filter(a=>(a.selectedValues||[]).length>0).length>0&&<div style={{marginBottom:16}}>
+          <p style={{fontSize:13,color:'#555'}}>Combinations: <strong>{selectedAttrs.filter(a=>(a.selectedValues||[]).length>0).reduce((acc,a)=>acc*(a.selectedValues||[]).length,1)}</strong></p>
+          <button type="button" className="btn-generate" onClick={generateVariants}>⚡ Generate All</button></div>}
+        {variants.length>0&&<div>{variants.map((v,i)=><div key={v.id} style={{display:'flex',justifyContent:'space-between',padding:'8px 12px',background:'#f9f9f9',borderRadius:6,marginTop:4,border:'1px solid #eee'}}>
+          <span style={{fontSize:13,fontWeight:500}}>{v.label||`V${i+1}`}</span><button type="button" className="btn-remove-row" onClick={()=>removeVariant(v.id)}>✕</button></div>)}</div>}
+        <button type="button" className="btn-add-row" onClick={addManualVariant} style={{marginTop:12}}>+ Add Manual Variant</button></>}</div>);
+
+      case 5: return (<div className="wizard-card"><h2>📊 Variant Details</h2>
+        {form.productType==='simple'?<div><div className="wz-form-row">
+          <div className="wz-form-group"><label>Price ₹</label><input type="number" value={form.price} onChange={e=>set('price',e.target.value)} /></div>
+          <div className="wz-form-group"><label>MRP ₹</label><input type="number" value={form.mrp} onChange={e=>set('mrp',e.target.value)} /></div>
+          <div className="wz-form-group"><label>Stock</label><input type="number" value={form.stock} onChange={e=>set('stock',e.target.value)} /></div></div></div>
+        :variants.length===0?<p style={{color:'#e53935'}}>No variants. Go back to generate.</p>
+        :<div style={{overflowX:'auto'}}><table className="variant-matrix"><thead><tr><th>Variant</th><th>SKU</th><th>Barcode</th><th>MRP</th><th>Price</th><th>Stock</th><th>Wt</th><th>Media</th><th></th></tr></thead><tbody>
+        {variants.map((v,i)=>{const sav=v.mrp&&v.price&&Number(v.mrp)>Number(v.price)?Math.round(((v.mrp-v.price)/v.mrp)*100):0;return(
+        <tr key={v.id}><td style={{fontWeight:500,fontSize:13}}>{v.label||`V${i+1}`}</td>
+        <td><input value={v.sku} onChange={e=>updateVariant(v.id,'sku',e.target.value)} style={{width:110}} /></td>
+        <td><input value={v.barcode} onChange={e=>updateVariant(v.id,'barcode',e.target.value)} style={{width:90}} /></td>
+        <td><input type="number" value={v.mrp} onChange={e=>updateVariant(v.id,'mrp',e.target.value)} style={{width:70}} /></td>
+        <td><input type="number" value={v.price} onChange={e=>updateVariant(v.id,'price',e.target.value)} style={{width:70}} />{sav>0&&<span className="savings-badge">{sav}%</span>}</td>
+        <td><input type="number" value={v.stock} onChange={e=>updateVariant(v.id,'stock',e.target.value)} style={{width:55}} /></td>
+        <td><input type="number" value={v.shippingWeight} onChange={e=>updateVariant(v.id,'shippingWeight',e.target.value)} style={{width:55}} /></td>
+        <td><input type="file" multiple accept="image/*,video/*" onChange={e=>handleVariantFiles(v.id,e)} style={{width:110,fontSize:11}} /></td>
+        <td><button type="button" className="btn-remove-row" onClick={()=>removeVariant(v.id)}>✕</button></td></tr>);})}
+        </tbody></table><button type="button" className="btn-add-row" onClick={addManualVariant}>+ Add Variant</button></div>}</div>);
+
+      case 6: return (<div className="wizard-card"><h2>🖼️ Media</h2>
+        {existingImages.length>0&&<div style={{marginBottom:16}}><p style={{fontSize:13,fontWeight:500,color:'#555'}}>Current Images:</p>
+        <div className="media-previews">{existingImages.map((img,i)=><div key={i} className="media-thumb"><img src={img.url} alt="" /><button type="button" className="remove-btn" onClick={()=>removeExisting(i)}>✕</button></div>)}</div></div>}
+        <div className="media-drop-zone" onClick={()=>fileRef.current?.click()} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();handleMedia(e);}}>
+          <div className="upload-icon">📤</div><p><strong>Click or drag</strong> to upload</p>
+          <input type="file" ref={fileRef} style={{display:'none'}} multiple accept="image/*,video/*" onChange={handleMedia} /></div>
+        {previews.length>0&&<div className="media-previews">{previews.map((s,i)=><div key={i} className="media-thumb"><img src={s} alt="" /><button type="button" className="remove-btn" onClick={()=>removeMedia(i)}>✕</button></div>)}</div>}</div>);
+
+      case 7: return (<div className="wizard-card"><h2>📐 Specifications</h2>
+        {specs.map((s,i)=><div key={i} className="spec-row"><input type="text" value={s.key} onChange={e=>updateSpec(i,'key',e.target.value)} placeholder="Key" />
+        <input type="text" value={s.value} onChange={e=>updateSpec(i,'value',e.target.value)} placeholder="Value" />
+        <button type="button" className="btn-remove-row" onClick={()=>removeSpec(i)}>✕</button></div>)}
+        <button type="button" className="btn-add-row" onClick={addSpec}>+ Add Spec</button></div>);
+
+      case 8: return (<div className="wizard-card"><h2>🔍 SEO</h2>
+        <div className="wz-form-group"><label>Meta Title</label><input type="text" value={form.seoTitle} onChange={e=>set('seoTitle',e.target.value)} /></div>
+        <div className="wz-form-group"><label>Meta Description</label><textarea value={form.seoDescription} onChange={e=>set('seoDescription',e.target.value)} style={{minHeight:60}} /></div>
+        <div className="wz-form-row"><div className="wz-form-group"><label>Keywords</label><input type="text" value={form.seoKeywords} onChange={e=>set('seoKeywords',e.target.value)} /></div>
+        <div className="wz-form-group"><label>Canonical URL</label><input type="url" value={form.canonicalUrl} onChange={e=>set('canonicalUrl',e.target.value)} /></div></div></div>);
+
+      case 9: return (<div className="wizard-card"><h2>🚀 Review & Publish</h2>
+        <div className="wz-form-group"><label>Status</label><select value={form.status} onChange={e=>set('status',e.target.value)}>
+          <option value="draft">📝 Draft</option><option value="published">✅ Published</option><option value="scheduled">📅 Scheduled</option><option value="hidden">🙈 Hidden</option></select></div>
+        <div className="wz-toggle"><input type="checkbox" checked={form.isFeatured} onChange={e=>set('isFeatured',e.target.checked)} /><span>Featured</span></div>
+        <div className="wz-toggle"><input type="checkbox" checked={form.inTodaysDeal} onChange={e=>set('inTodaysDeal',e.target.checked)} /><span>Today's Deals</span></div>
+        <div className="wz-toggle"><input type="checkbox" checked={form.inNewArrivals} onChange={e=>set('inNewArrivals',e.target.checked)} /><span>New Arrivals</span></div>
+        <div style={{marginTop:20,padding:16,background:'#f1f8f1',borderRadius:8,border:'1px solid #c8e6c9'}}>
+          <h3 style={{fontSize:15,color:'#2e7d32',margin:0}}>📋 Summary</h3>
+          <p style={{fontSize:13,color:'#555',marginTop:8}}><strong>{form.name||'Untitled'}</strong> — {form.productType}<br/>
+          Category: {form.category} | Brand: {form.brand}<br/>Variants: {variants.length} | Status: {form.status}</p></div></div>);
+      default: return null;
+    }
+  };
 
   return (
-    <div className="add-product-page">
-      <div className="page-header">
-        <div>
-          <h1>Premium Editor Mode</h1>
-          <p style={{ color: '#8b949e', marginTop: '4px', fontSize: '14px' }}>Expert product data entry & variant management.</p>
-        </div>
-        <button className="btn-back" onClick={() => navigate('/products')}>
-          <ArrowLeft size={16} /> Back to Catalog
-        </button>
+    <div className="product-wizard">
+      <div className="wizard-header">
+        <div><h1>Edit Product</h1><p>Enterprise Product Editor</p></div>
+        <button className="btn-prev" onClick={()=>navigate('/products')}>← Back to Catalog</button>
       </div>
-
-      <form className="product-form" onSubmit={handleSubmit}>
-        <div className="form-main">
-          
-          {/* BASIC INFO */}
-          <motion.div className="form-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h2><Package size={18} /> Basic Information</h2>
-            
-            <div className="form-group">
-              <label>Product Title *</label>
-              <input type="text" name="name" value={formData.name} onChange={handleChange} required />
-            </div>
-
-            <div className="form-group">
-              <label>Description</label>
-              <textarea name="description" value={formData.description} onChange={handleChange} />
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Category *</label>
-                <select name="category" value={formData.category} onChange={handleChange} required>
-                  <option value="Spices">Spices</option>
-                  <option value="Powders">Powders</option>
-                  <option value="Blends">Blends</option>
-                  <option value="Organic">Organic</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Brand</label>
-                <input type="text" name="brand" value={formData.brand} onChange={handleChange} />
-              </div>
-            </div>
-          </motion.div>
-
-          {/* ADVANCED VARIANTS */}
-          <motion.div className="form-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #30363d', paddingBottom: '12px', marginBottom: '20px' }}>
-              <h2 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0 }}><Box size={18} /> Advanced Variants</h2>
-              <button type="button" className="btn-add-variant" style={{ width: 'auto', padding: '6px 12px' }} onClick={addVariant}>
-                <Plus size={16} /> Add Variant
-              </button>
-            </div>
-
-            <AnimatePresence>
-              {variants.map((variant, index) => {
-                const savings = (variant.mrp && variant.price && parseFloat(variant.mrp) > parseFloat(variant.price)) 
-                  ? Math.round(((variant.mrp - variant.price) / variant.mrp) * 100) 
-                  : 0;
-
-                return (
-                  <motion.div 
-                    key={variant.id} 
-                    className="variant-card"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                  >
-                    <div className="variant-header">
-                      <h3>Variant {index + 1}</h3>
-                      {variants.length > 1 && (
-                        <button type="button" className="btn-remove-variant" onClick={() => removeVariant(variant.id)}>
-                          Remove
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Attribute (e.g. Size)</label>
-                        <input type="text" value={variant.attributeName} onChange={e => handleVariantChange(variant.id, 'attributeName', e.target.value)} required />
-                      </div>
-                      <div className="form-group">
-                        <label>Value (e.g. 500g)</label>
-                        <input type="text" value={variant.attributeValue} onChange={e => handleVariantChange(variant.id, 'attributeValue', e.target.value)} required />
-                      </div>
-                      <div className="form-group">
-                        <label>SKU</label>
-                        <input type="text" value={variant.sku} onChange={e => handleVariantChange(variant.id, 'sku', e.target.value)} />
-                      </div>
-                      <div className="form-group">
-                        <label>Barcode</label>
-                        <input type="text" value={variant.barcode} onChange={e => handleVariantChange(variant.id, 'barcode', e.target.value)} />
-                      </div>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Regular Price (MRP) ₹</label>
-                        <input type="number" value={variant.mrp} onChange={e => handleVariantChange(variant.id, 'mrp', e.target.value)} required />
-                      </div>
-                      <div className="form-group">
-                        <label>Sale Price ₹</label>
-                        <input type="number" value={variant.price} onChange={e => handleVariantChange(variant.id, 'price', e.target.value)} required />
-                        {savings > 0 ? (
-                          <div className="savings-indicator">✓ {savings}% Savings</div>
-                        ) : (parseFloat(variant.price) > parseFloat(variant.mrp) && (
-                          <div className="error-indicator">Price exceeds MRP!</div>
-                        ))}
-                      </div>
-                      <div className="form-group">
-                        <label>Stock Qty</label>
-                        <input type="number" value={variant.stock} onChange={e => handleVariantChange(variant.id, 'stock', e.target.value)} required />
-                      </div>
-                      <div className="form-group">
-                        <label>Variant Media</label>
-                        {variant.existingImages && variant.existingImages.length > 0 && (
-                          <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
-                            {variant.existingImages.map((img, i) => (
-                              <div key={i} style={{ position: 'relative', width: '32px', height: '32px', border: '1px solid #30363d', borderRadius: '4px' }}>
-                                <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                <button type="button" onClick={() => removeVariantExistingImage(variant.id, i)} style={{ position: 'absolute', top: -5, right: -5, background: 'red', color: 'white', borderRadius: '50%', width: 14, height: 14, border: 'none', fontSize: 9, cursor: 'pointer', padding: 0 }}>x</button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <input type="file" multiple accept="image/*,video/*" onChange={e => handleVariantFileChange(variant.id, e)} style={{ padding: '6px' }} />
-                      </div>
-                    </div>
-                  </motion.div>
-                )
-              })}
-            </AnimatePresence>
-          </motion.div>
-        </div>
-
-        <div className="form-sidebar">
-          
-          {/* MEDIA HANDLING */}
-          <motion.div className="form-section" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-            <h2><ImageIcon size={18} /> Global Media</h2>
-            
-            {existingImages.length > 0 && (
-              <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '13px', color: '#8b949e', marginBottom: '8px' }}>Current Images</h3>
-                <div className="image-previews">
-                  {existingImages.map((img, i) => (
-                    <div key={i} className="preview-item">
-                      <img src={img.url} alt="" />
-                      <button type="button" className="btn-remove-image" onClick={() => removeExistingImage(i)}><X size={12} /></button>
-                    </div>
-                  ))}
-                </div>
-                <div className="checkbox-group" style={{ marginTop: '12px' }}>
-                  <input type="checkbox" checked={keepExistingImages} onChange={e => setKeepExistingImages(e.target.checked)} />
-                  <span>Keep existing images</span>
-                </div>
-              </div>
-            )}
-            
-            <div 
-              className="file-upload-zone"
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={e => e.preventDefault()}
-              onDrop={handleGlobalImageDrop}
-            >
-              <UploadCloud size={32} style={{ marginBottom: '12px', color: '#58a6ff' }} />
-              <p>Drag & drop images here or <strong>browse</strong></p>
-              <input type="file" ref={fileInputRef} className="file-upload-input" multiple accept="image/*" onChange={handleGlobalImageDrop} />
-            </div>
-
-            {imagePreviews.length > 0 && (
-              <div className="image-previews">
-                {imagePreviews.map((src, idx) => (
-                  <div key={idx} className="preview-item">
-                    <img src={src} alt="Preview" />
-                    <button type="button" className="btn-remove-image" onClick={() => removeGlobalImage(idx)}>
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-
-          {/* DYNAMIC DISCOUNT ENGINE */}
-          <motion.div className="form-section" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-            <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #30363d', paddingBottom: '12px', marginBottom: '16px' }}>
-              <h2 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0 }}><Percent size={18} /> Marketing Rules</h2>
-              <button type="button" onClick={addDiscountRule} style={{ background: 'none', color: '#bc8cff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px' }}>
-                <Plus size={14} /> Add Rule
-              </button>
-            </div>
-
-            <AnimatePresence>
-              {discountRules.map((rule) => (
-                <motion.div 
-                  key={rule.id} className="discount-rule-card"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input type="checkbox" checked={rule.isActive} onChange={e => updateDiscountRule(rule.id, 'isActive', e.target.checked)} />
-                      <span style={{ fontSize: '13px', fontWeight: 500, color: rule.isActive ? '#c9d1d9' : '#8b949e' }}>Active Rule</span>
-                    </div>
-                    <button type="button" onClick={() => removeDiscountRule(rule.id)} style={{ background: 'none', border: 'none', color: '#ff7b72', cursor: 'pointer' }}>
-                      <X size={14} />
-                    </button>
-                  </div>
-                  
-                  <div className="form-group" style={{ marginBottom: '12px' }}>
-                    <label>Discount Type</label>
-                    <select value={rule.type} onChange={e => updateDiscountRule(rule.id, 'type', e.target.value)} style={{ padding: '6px 8px' }}>
-                      <option value="PERCENTAGE">Percentage Off (%)</option>
-                      <option value="FIXED">Fixed Amount Off (₹)</option>
-                      <option value="BOGO">Buy X Get Y</option>
-                    </select>
-                  </div>
-                  
-                  <div className="form-row">
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Value</label>
-                      <input type="number" value={rule.value} onChange={e => updateDiscountRule(rule.id, 'value', e.target.value)} placeholder="e.g. 10" style={{ padding: '6px 8px' }} />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label>Min Qty Threshold</label>
-                      <input type="number" value={rule.minQuantity} onChange={e => updateDiscountRule(rule.id, 'minQuantity', e.target.value)} style={{ padding: '6px 8px' }} />
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
-
-          {/* PLACEMENT & STATUS */}
-          <motion.div className="form-section" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-            <h2><Activity size={18} /> Visibility & Status</h2>
-            <div className="checkbox-group">
-              <input type="checkbox" name="isFeatured" checked={formData.isFeatured} onChange={handleChange} />
-              <span>Feature on Homepage (Top Placement)</span>
-            </div>
-            <div className="checkbox-group">
-              <input type="checkbox" name="inTodaysDeal" checked={formData.inTodaysDeal} onChange={handleChange} />
-              <span>Show in "Today's Deals" Strip</span>
-            </div>
-            <div className="checkbox-group">
-              <input type="checkbox" name="inNewArrivals" checked={formData.inNewArrivals} onChange={handleChange} />
-              <span>Show in "New Arrivals" Strip</span>
-            </div>
-          </motion.div>
-
-        </div>
-        
-        {/* SUBMIT */}
-        <div style={{ gridColumn: '1 / -1' }} className="form-actions">
-          <button type="button" className="btn-cancel" onClick={() => navigate('/products')}>Cancel</button>
-          <button type="submit" className="btn-submit" disabled={loading}>
-            {loading ? 'Processing...' : (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ShieldCheck size={16} /> Save Changes
-              </span>
-            )}
-          </button>
+      <div className="step-progress">
+        {STEPS.map((s,i)=><div key={i} className={`step-item ${i===step?'active':''} ${i<step?'completed':''}`} onClick={()=>setStep(i)}>
+          <span className="step-num">{i+1}</span>{s}</div>)}
+      </div>
+      <form onSubmit={e=>e.preventDefault()}>
+        {renderStep()}
+        <div className="wizard-nav">
+          {step>0?<button type="button" className="btn-prev" onClick={()=>setStep(step-1)}>← Previous</button>:<div/>}
+          {step<STEPS.length-1?<button type="button" className="btn-next" onClick={()=>setStep(step+1)}>Next →</button>
+          :<button type="button" className="btn-publish" disabled={loading} onClick={handleSubmit}>{loading?'Saving...':'💾 Save Changes'}</button>}
         </div>
       </form>
     </div>

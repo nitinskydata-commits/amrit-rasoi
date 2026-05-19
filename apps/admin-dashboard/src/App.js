@@ -10,7 +10,6 @@ import Login from './pages/Login';
 // Pages
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
-import CreateProduct from './pages/CreateProduct';
 import AddProduct from './pages/Products/AddProduct';
 import EditProduct from './pages/Products/EditProduct';
 import Orders from './pages/Orders';
@@ -75,7 +74,6 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/products" element={<Products />} />
-              <Route path="/create-product" element={<CreateProduct />} />
               <Route path="/add-product" element={<AddProduct />} />
               <Route path="/edit-product/:id" element={<EditProduct />} />
               <Route path="/orders" element={<Orders />} />

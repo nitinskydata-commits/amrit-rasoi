@@ -95,7 +95,7 @@ const Products = () => {
         </div>
         <button 
           className="btn btn-primary" 
-          onClick={() => navigate('/create-product')}
+          onClick={() => navigate('/add-product')}
           style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
         >
           <FaPlus /> Add New Product

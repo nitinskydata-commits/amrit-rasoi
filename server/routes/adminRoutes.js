@@ -44,6 +44,20 @@ const {
 } = require('../controllers/settingsController');
 
 const {
+  getAttributes,
+  createAttribute,
+  updateAttribute,
+  deleteAttribute
+} = require('../controllers/attributeController');
+
+const {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory
+} = require('../controllers/categoryController');
+
+const {
   getAllStaff,
   createStaff,
   updateStaff,
@@ -96,6 +110,18 @@ router.post('/product/new', authorizePermissions('manageProducts'), upload.any()
 router.put('/product/:id', authorizePermissions('manageProducts'), upload.any(), updateProduct);
 router.delete('/product/:id', authorizePermissions('manageProducts'), deleteProductAdmin);
 router.post('/products/bulk-delete', authorizePermissions('manageProducts'), bulkDeleteProducts);
+
+// Product Attributes Management
+router.get('/attributes', getAttributes);
+router.post('/attributes', authorizePermissions('manageProducts'), createAttribute);
+router.put('/attributes/:id', authorizePermissions('manageProducts'), updateAttribute);
+router.delete('/attributes/:id', authorizePermissions('manageProducts'), deleteAttribute);
+
+// Category Management
+router.get('/categories', getCategories);
+router.post('/categories', authorizePermissions('manageProducts'), createCategory);
+router.put('/categories/:id', authorizePermissions('manageProducts'), updateCategory);
+router.delete('/categories/:id', authorizePermissions('manageProducts'), deleteCategory);
 
 // Inventory Management (Scoped & Permission Guarded)
 router.get('/inventory', scopePartnerCatalog, authorizePermissions('manageInventory'), getInventory);
