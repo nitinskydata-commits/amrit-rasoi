@@ -438,10 +438,10 @@ const Home = () => {
             </div>
 
             {/* Card 3: Dynamic overlay card C */}
-            {activeOverlayCards.length > 2 ? renderOverlayCard(activeOverlayCards[2]) : renderOverlayCard(defaultOverlayCards[2])}
+            {activeOverlayCards.length > 2 && renderOverlayCard(activeOverlayCards[2])}
 
             {/* Card 4: Dynamic overlay card D */}
-            {activeOverlayCards.length > 3 ? renderOverlayCard(activeOverlayCards[3]) : renderOverlayCard(defaultOverlayCards[3])}
+            {activeOverlayCards.length > 3 && renderOverlayCard(activeOverlayCards[3])}
 
           </div>
 
@@ -481,10 +481,10 @@ const Home = () => {
             </div>
 
             {/* Card 6: Dynamic overlay card A */}
-            {activeOverlayCards.length > 0 ? renderOverlayCard(activeOverlayCards[0]) : renderOverlayCard(defaultOverlayCards[0])}
+            {activeOverlayCards.length > 0 && renderOverlayCard(activeOverlayCards[0])}
 
             {/* Card 7: Dynamic overlay card B */}
-            {activeOverlayCards.length > 1 ? renderOverlayCard(activeOverlayCards[1]) : renderOverlayCard(defaultOverlayCards[1])}
+            {activeOverlayCards.length > 1 && renderOverlayCard(activeOverlayCards[1])}
 
             {/* Card 8: Partner Benefits & Spices Wholesale */}
             <div className="amazon-grid-card" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', backgroundImage: 'linear-gradient(135deg, #fff3e0 0%, #ffffff 100%)' }}>
