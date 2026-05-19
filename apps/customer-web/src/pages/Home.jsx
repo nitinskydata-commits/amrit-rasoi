@@ -65,10 +65,10 @@ const Home = () => {
     },
     {
       _id: 'default-3',
-      title: '100% Pure & Cold Pressed Oils',
-      description: 'Zero additives, rich organic nutrients intact.',
-      image: { url: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&q=80&w=1600' },
-      link: '/search?category=Organic',
+      title: 'Aromatic Whole Seeds & Herbs',
+      description: 'Grown in high-grade rich soils for unmatched depth of aroma.',
+      image: { url: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?auto=format&fit=crop&q=80&w=1600' },
+      link: '/search?category=Seeds',
       mediaType: 'image'
     }
   ];
@@ -158,47 +158,47 @@ const Home = () => {
     },
     {
       _id: 'default-card-2',
-      title: 'Pantry Essentials | Fresh & Pure',
-      description: 'Basmati Rice, Forest Honey, Pure Ghee & Pressed Oils',
-      image: { url: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=400' },
-      link: '/search?category=Organic',
-      linkText: 'Browse Pantry Range',
+      title: 'Amrit Rasoi Culinary Spices',
+      description: 'Pure Turmeric, Coriander, Kashmiri Chilli & Black Pepper',
+      image: { url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=400' },
+      link: '/search?category=Powders',
+      linkText: 'Browse Ground Powders',
       mediaType: 'image',
       items: [
-        { label: 'Basmati Rice', category: 'Organic', img: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Forest Honey', category: 'Organic', img: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Pure Ghee', category: 'Organic', img: 'https://images.unsplash.com/photo-1622484211148-716598e09141?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Pressed Oils', category: 'Organic', img: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&q=80&w=300' }
+        { label: 'Turmeric Powder', category: 'Powders', img: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&q=80&w=300' },
+        { label: 'Coriander Powder', category: 'Powders', img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300' },
+        { label: 'Kashmiri Mirch', category: 'Powders', img: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?auto=format&fit=crop&q=80&w=300' },
+        { label: 'Black Pepper', category: 'Spices', img: 'https://images.unsplash.com/photo-1515002246390-7bf7e8f87b54?auto=format&fit=crop&q=80&w=300' }
       ]
     },
     {
       _id: 'default-card-3',
-      title: 'Superfoods & Healthy Snacks',
-      description: 'Nuts, Makhana, Teas & Seeds',
-      image: { url: 'https://images.unsplash.com/photo-1596547609652-9cf5d8d76921?auto=format&fit=crop&q=80&w=400' },
-      link: '/search?category=Organic',
-      linkText: 'Explore Healthy Foods',
+      title: 'Signature Masalas & Gourmet Blends',
+      description: 'Garam Masala, Biryani Blends, Tea Spices & Chaat Seasonings',
+      image: { url: 'https://images.unsplash.com/photo-1532336414038-cf190733eb37?auto=format&fit=crop&q=80&w=400' },
+      link: '/search?category=Blends',
+      linkText: 'Explore Special Blends',
       mediaType: 'image',
       items: [
-        { label: 'Dry Fruits & Nuts', category: 'Organic', img: 'https://images.unsplash.com/photo-1511124699504-77ac2636af29?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Organic Makhana', category: 'Organic', img: 'https://images.unsplash.com/photo-1610970881699-44a5587caaec?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Herbal Teas', category: 'Herbs', img: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Super Seeds', category: 'Organic', img: 'https://images.unsplash.com/photo-1543362906-acfc16c67564?auto=format&fit=crop&q=80&w=300' }
+        { label: 'Garam Masala', category: 'Blends', img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300' },
+        { label: 'Biryani Masala', category: 'Blends', img: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&q=80&w=300' },
+        { label: 'Tea Masala', category: 'Blends', img: 'https://images.unsplash.com/photo-1515002246390-7bf7e8f87b54?auto=format&fit=crop&q=80&w=300' },
+        { label: 'Chaat Masala', category: 'Blends', img: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?auto=format&fit=crop&q=80&w=300' }
       ]
     },
     {
       _id: 'default-card-4',
       title: 'SBMI Bulk Business | Save Big',
-      description: 'Catering, Hampers, Logistics & Partner Benefits',
+      description: 'Bulk Spice Packs, Festive Boxes, Direct Sourcing & Wholesale Pricing',
       image: { url: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=400' },
       link: '/login',
       linkText: 'Create Free Account',
       mediaType: 'image',
       items: [
-        { label: 'Catering Packs', category: 'Organic', img: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Gourmet Hampers', category: 'Organic', img: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Supply Chain', category: 'Organic', img: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Partner Benefits', category: 'Organic', img: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=300' }
+        { label: 'Bulk Spice Packs', category: 'Spices', img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300' },
+        { label: 'Festive Gift Boxes', category: 'Spices', img: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&q=80&w=300' },
+        { label: 'Direct Farm Sourcing', category: 'Spices', img: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&q=80&w=300' },
+        { label: 'Wholesale Discounts', category: 'Spices', img: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=300' }
       ]
     }
   ];

@@ -22,7 +22,7 @@ const AddProduct = () => {
   });
 
   const [variants, setVariants] = useState([
-    { weight: '100g', price: '', mrp: '', stock: '' }
+    { attributeName: 'Weight', attributeValue: '100g', price: '', mrp: '', stock: '', sku: '', barcode: '', files: [] }
   ]);
 
   const [images, setImages] = useState([]);
@@ -46,7 +46,14 @@ const AddProduct = () => {
 
   // Add new variant
   const addVariant = () => {
-    setVariants([...variants, { weight: '', price: '', mrp: '', stock: '' }]);
+    setVariants([...variants, { attributeName: 'Weight', attributeValue: '', price: '', mrp: '', stock: '', sku: '', barcode: '', files: [] }]);
+  };
+
+  const handleVariantFileChange = (index, e) => {
+    const files = Array.from(e.target.files);
+    const updatedVariants = [...variants];
+    updatedVariants[index].files = files;
+    setVariants(updatedVariants);
   };
 
   // Remove variant
@@ -81,8 +88,27 @@ const AddProduct = () => {
         formDataToSend.append(key, formData[key]);
       });
 
+      // Map frontend variant format to backend schema
+      const mappedVariants = variants.map(v => ({
+        attributes: [{ name: v.attributeName || 'Weight', value: v.attributeValue || v.weight }],
+        price: v.price,
+        mrp: v.mrp,
+        stock: v.stock,
+        sku: v.sku,
+        barcode: v.barcode
+      }));
+
       // Append variants as JSON string
-      formDataToSend.append('variants', JSON.stringify(variants));
+      formDataToSend.append('variants', JSON.stringify(mappedVariants));
+
+      // Append variant images/videos
+      variants.forEach((variant, index) => {
+        if (variant.files && variant.files.length > 0) {
+          variant.files.forEach(file => {
+            formDataToSend.append(`variant_images_${index}`, file);
+          });
+        }
+      });
 
       // Append images
       images.forEach(image => {
@@ -215,7 +241,7 @@ const AddProduct = () => {
         {/* Weight Variants */}
         <div className="form-section">
           <div className="section-header">
-            <h2>Weight Variants & Pricing</h2>
+            <h2>Universal Variants & Pricing</h2>
             <button type="button" className="btn-add-variant" onClick={addVariant}>
               + Add Variant
             </button>
@@ -238,16 +264,49 @@ const AddProduct = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Weight *</label>
+                  <label>Attribute Name *</label>
                   <input
                     type="text"
-                    value={variant.weight}
-                    onChange={(e) => handleVariantChange(index, 'weight', e.target.value)}
+                    value={variant.attributeName || 'Weight'}
+                    onChange={(e) => handleVariantChange(index, 'attributeName', e.target.value)}
                     required
-                    placeholder="e.g., 100g, 500g, 1kg"
+                    placeholder="e.g., Weight, Size, Color"
                   />
                 </div>
 
+                <div className="form-group">
+                  <label>Attribute Value *</label>
+                  <input
+                    type="text"
+                    value={variant.attributeValue || variant.weight || ''}
+                    onChange={(e) => handleVariantChange(index, 'attributeValue', e.target.value)}
+                    required
+                    placeholder="e.g., 500g, XL, Red"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>SKU</label>
+                  <input
+                    type="text"
+                    value={variant.sku || ''}
+                    onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
+                    placeholder="Variant SKU"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Barcode</label>
+                  <input
+                    type="text"
+                    value={variant.barcode || ''}
+                    onChange={(e) => handleVariantChange(index, 'barcode', e.target.value)}
+                    placeholder="UPC / EAN"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
                 <div className="form-group">
                   <label>Selling Price (₹) *</label>
                   <input
@@ -279,6 +338,19 @@ const AddProduct = () => {
                     required
                     placeholder="60"
                   />
+                </div>
+                
+                <div className="form-group">
+                  <label>Variant Images/Videos</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={(e) => handleVariantFileChange(index, e)}
+                  />
+                  {variant.files && variant.files.length > 0 && (
+                    <span style={{ fontSize: '11px', color: '#007185' }}>{variant.files.length} file(s) selected</span>
+                  )}
                 </div>
               </div>
 

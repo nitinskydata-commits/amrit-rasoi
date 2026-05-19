@@ -21,7 +21,7 @@ const EditProduct = () => {
   });
 
   const [variants, setVariants] = useState([
-    { weight: '100g', price: '', mrp: '', stock: '' }
+    { attributeName: 'Weight', attributeValue: '100g', price: '', mrp: '', stock: '', sku: '', barcode: '', files: [], existingImages: [] }
   ]);
 
   const [images, setImages] = useState([]);
@@ -59,7 +59,22 @@ const EditProduct = () => {
 
         // Set variants if they exist
         if (product.variants && product.variants.length > 0) {
-          setVariants(product.variants);
+          const mappedVariants = product.variants.map(v => {
+            const attr = v.attributes && v.attributes.length > 0 ? v.attributes[0] : {};
+            return {
+              ...v,
+              attributeName: attr.name || 'Weight',
+              attributeValue: attr.value || v.weight || '',
+              price: v.price || '',
+              mrp: v.mrp || '',
+              stock: v.stock !== undefined ? v.stock : 0,
+              sku: v.sku || '',
+              barcode: v.barcode || '',
+              files: [],
+              existingImages: v.images || []
+            };
+          });
+          setVariants(mappedVariants);
         }
 
         // Set existing images
@@ -93,7 +108,20 @@ const EditProduct = () => {
 
   // Add new variant
   const addVariant = () => {
-    setVariants([...variants, { weight: '', price: '', mrp: '', stock: '' }]);
+    setVariants([...variants, { attributeName: 'Weight', attributeValue: '', price: '', mrp: '', stock: '', sku: '', barcode: '', files: [], existingImages: [] }]);
+  };
+
+  const handleVariantFileChange = (index, e) => {
+    const files = Array.from(e.target.files);
+    const updatedVariants = [...variants];
+    updatedVariants[index].files = files;
+    setVariants(updatedVariants);
+  };
+
+  const removeVariantExistingImage = (variantIndex, imageIndex) => {
+    const updatedVariants = [...variants];
+    updatedVariants[variantIndex].existingImages = updatedVariants[variantIndex].existingImages.filter((_, i) => i !== imageIndex);
+    setVariants(updatedVariants);
   };
 
   // Remove variant
@@ -130,8 +158,12 @@ const EditProduct = () => {
     for (let i = 0; i < variants.length; i++) {
       const variant = variants[i];
       
-      if (!variant.weight || !variant.price || !variant.mrp || !variant.stock) {
-        alert(`Variant ${i + 1}: Please fill all fields (Weight, MRP, Selling Price, Stock)`);
+      if (!variant.attributeValue && !variant.weight) {
+        alert(`Variant ${i + 1}: Please provide an attribute value (e.g. 500g)`);
+        return false;
+      }
+      if (!variant.price || !variant.mrp || variant.stock === undefined || variant.stock === '') {
+        alert(`Variant ${i + 1}: Please fill all required fields (Price, MRP, Stock)`);
         return false;
       }
 
@@ -172,8 +204,20 @@ const EditProduct = () => {
         formDataToSend.append('stock', variants[0].stock);
       }
 
+      // Map frontend variant format to backend schema
+      const mappedVariants = variants.map(v => ({
+        _id: v._id,
+        attributes: [{ name: v.attributeName || 'Weight', value: v.attributeValue || v.weight }],
+        price: v.price,
+        mrp: v.mrp,
+        stock: v.stock,
+        sku: v.sku,
+        barcode: v.barcode,
+        images: v.existingImages || []
+      }));
+
       // Append variants as JSON string
-      formDataToSend.append('variants', JSON.stringify(variants));
+      formDataToSend.append('variants', JSON.stringify(mappedVariants));
 
       // Append keep existing images flag
       formDataToSend.append('keepExistingImages', keepExistingImages);
@@ -186,6 +230,15 @@ const EditProduct = () => {
       // Append new images
       images.forEach(image => {
         formDataToSend.append('images', image);
+      });
+
+      // Append new variant images/videos
+      variants.forEach((variant, index) => {
+        if (variant.files && variant.files.length > 0) {
+          variant.files.forEach(file => {
+            formDataToSend.append(`variant_images_${index}`, file);
+          });
+        }
       });
 
       const config = {
@@ -323,9 +376,9 @@ const EditProduct = () => {
         {/* Weight Variants - THE ONLY PRICING SECTION */}
         <div className="form-section">
           <div className="section-header">
-            <h2>Weight Variants & Pricing</h2>
+            <h2>Universal Variants & Pricing</h2>
             <p className="help-text" style={{ fontSize: '14px', color: '#666', marginBottom: '10px' }}>
-              Each weight variant has its own price, MRP, and stock. Add all available sizes below.
+              Each variant has its own price, stock, SKU, barcode, and media. Add all available options below.
             </p>
             <button type="button" className="btn-add-variant" onClick={addVariant}>
               + Add Variant
@@ -349,15 +402,49 @@ const EditProduct = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Weight *</label>
+                  <label>Attribute Name *</label>
                   <input
                     type="text"
-                    value={variant.weight}
-                    onChange={(e) => handleVariantChange(index, 'weight', e.target.value)}
+                    value={variant.attributeName || 'Weight'}
+                    onChange={(e) => handleVariantChange(index, 'attributeName', e.target.value)}
                     required
-                    placeholder="e.g., 100g, 200g, 500g, 1kg"
+                    placeholder="e.g., Weight, Size, Color"
                   />
                 </div>
+
+                <div className="form-group">
+                  <label>Attribute Value *</label>
+                  <input
+                    type="text"
+                    value={variant.attributeValue || variant.weight || ''}
+                    onChange={(e) => handleVariantChange(index, 'attributeValue', e.target.value)}
+                    required
+                    placeholder="e.g., 500g, XL, Red"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>SKU</label>
+                  <input
+                    type="text"
+                    value={variant.sku || ''}
+                    onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
+                    placeholder="Variant SKU"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Barcode</label>
+                  <input
+                    type="text"
+                    value={variant.barcode || ''}
+                    onChange={(e) => handleVariantChange(index, 'barcode', e.target.value)}
+                    placeholder="UPC / EAN"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
 
                 <div className="form-group">
                   <label>MRP (₹) * (Original Price)</label>
@@ -401,6 +488,33 @@ const EditProduct = () => {
                     placeholder="60"
                     min="0"
                   />
+                </div>
+                
+                <div className="form-group">
+                  <label>Variant Images/Videos</label>
+                  {variant.existingImages && variant.existingImages.length > 0 && (
+                    <div className="variant-existing-images" style={{ display: 'flex', gap: '5px', marginBottom: '8px' }}>
+                      {variant.existingImages.map((img, imgIdx) => (
+                        <div key={imgIdx} style={{ position: 'relative', width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden', border: '1px solid #ddd' }}>
+                          <img src={img.url} alt="Variant" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <button 
+                            type="button" 
+                            onClick={() => removeVariantExistingImage(index, imgIdx)}
+                            style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(255,0,0,0.8)', color: 'white', border: 'none', borderRadius: '0 0 0 4px', fontSize: '10px', cursor: 'pointer', padding: '2px 4px' }}
+                          >×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={(e) => handleVariantFileChange(index, e)}
+                  />
+                  {variant.files && variant.files.length > 0 && (
+                    <span style={{ fontSize: '11px', color: '#007185' }}>{variant.files.length} new file(s) selected</span>
+                  )}
                 </div>
               </div>
 
