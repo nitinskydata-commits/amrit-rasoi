@@ -180,10 +180,10 @@ const Home = () => {
       linkText: 'Explore Healthy Foods',
       mediaType: 'image',
       items: [
-        { label: 'Dry Fruits & Nuts', category: 'Organic', img: 'https://images.unsplash.com/photo-1596547609652-9cf5d8d76921?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Organic Makhana', category: 'Organic', img: 'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?auto=format&fit=crop&q=80&w=300' },
+        { label: 'Dry Fruits & Nuts', category: 'Organic', img: 'https://images.unsplash.com/photo-1511124699504-77ac2636af29?auto=format&fit=crop&q=80&w=300' },
+        { label: 'Organic Makhana', category: 'Organic', img: 'https://images.unsplash.com/photo-1610970881699-44a5587caaec?auto=format&fit=crop&q=80&w=300' },
         { label: 'Herbal Teas', category: 'Herbs', img: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Super Seeds', category: 'Organic', img: 'https://images.unsplash.com/photo-1568644365101-527c18005f01?auto=format&fit=crop&q=80&w=300' }
+        { label: 'Super Seeds', category: 'Organic', img: 'https://images.unsplash.com/photo-1543362906-acfc16c67564?auto=format&fit=crop&q=80&w=300' }
       ]
     },
     {
@@ -291,15 +291,7 @@ const Home = () => {
   if (isAuthenticated) {
     return (
       <div className="home logged-in-home" style={{ backgroundColor: '#eaeded', minHeight: '100vh', paddingBottom: '40px' }}>
-        {/* Sleek Subheader Navigation Bar (Amazon-style) */}
-        <div className="amazon-subheader" style={{ backgroundColor: '#232f3e', color: 'white', padding: '8px 20px', fontSize: '13px', display: 'flex', gap: '15px', alignItems: 'center' }}>
-          <span style={{ fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>🌶️ SBMI Spices</span>
-          <span style={{ cursor: 'pointer', color: '#ddd' }} onClick={() => handleCategoryChange('Spices')}>Whole Spices</span>
-          <span style={{ cursor: 'pointer', color: '#ddd' }} onClick={() => handleCategoryChange('Powders')}>Ground Powders</span>
-          <span style={{ cursor: 'pointer', color: '#ddd' }} onClick={() => handleCategoryChange('Blends')}>Gourmet Blends</span>
-          <span style={{ cursor: 'pointer', color: '#ddd' }} onClick={() => handleCategoryChange('Organic')}>Organic Pantry</span>
-          <span style={{ cursor: 'pointer', marginLeft: 'auto', color: '#febd69', fontWeight: '700' }}>🔥 Festive Spice Sale | Up to 60% Off</span>
-        </div>
+
 
         {/* Dynamic Hero Slideshow with Amazon-style bottom fade overlay */}
         <section className="slideshow-container" style={{ height: '380px', position: 'relative', overflow: 'hidden' }}>
@@ -334,42 +326,54 @@ const Home = () => {
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               )}
-              {/* Overlay card */}
+              {/* Left-side subtle gradient shading to ensure high readability */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                bottom: 0,
+                width: '60%',
+                background: 'linear-gradient(to right, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.35) 60%, rgba(0, 0, 0, 0) 100%)',
+                zIndex: 1
+              }} />
+
+              {/* Elegant Text Overlay */}
               <div className="slide-overlay-content" style={{
                 position: 'absolute',
-                top: '40px',
+                top: '70px',
                 left: '60px',
                 zIndex: 2,
                 color: 'white',
-                maxWidth: '480px',
-                background: 'rgba(0,0,0,0.45)',
-                padding: '24px',
-                borderRadius: '8px',
-                backdropFilter: 'blur(4px)',
-                border: '1px solid rgba(255,255,255,0.1)'
+                maxWidth: '520px',
+                padding: '0',
+                textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)'
               }}>
                 <span className="premium-badge-label" style={{
-                  background: '#f0c14b',
+                  background: '#febd69',
                   color: '#111',
-                  padding: '4px 10px',
-                  borderRadius: '100px',
+                  padding: '4px 12px',
+                  borderRadius: '4px',
                   fontSize: '11px',
                   fontWeight: '800',
                   textTransform: 'uppercase',
                   display: 'inline-block',
-                  marginBottom: '10px'
+                  marginBottom: '14px',
+                  letterSpacing: '0.5px'
                 }}>AMRIT RASOI SPECIAL</span>
-                <h1 style={{ fontSize: '26px', fontWeight: '800', marginBottom: '8px' }}>{slide.title}</h1>
-                <p style={{ fontSize: '13px', opacity: 0.9, marginBottom: '16px' }}>{slide.description}</p>
+                <h1 style={{ fontSize: '38px', fontWeight: '800', marginBottom: '10px', lineHeight: '1.2' }}>{slide.title}</h1>
+                <p style={{ fontSize: '15px', opacity: 0.95, marginBottom: '24px', lineHeight: '1.5' }}>{slide.description}</p>
                 <Link to={slide.link || '/search'} style={{
                   background: '#f0c14b',
                   color: '#111',
-                  padding: '8px 18px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
+                  padding: '10px 24px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
                   fontWeight: '700',
                   textDecoration: 'none',
-                  border: '1px solid #a88734'
+                  border: '1px solid #a88734',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.15)',
+                  display: 'inline-block',
+                  transition: '0.2s'
                 }}>Shop Now</Link>
               </div>
             </div>

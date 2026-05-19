@@ -225,22 +225,40 @@ const Header = () => {
       </div>
 
       <nav className={`header-nav ${showMobileMenu ? 'show' : ''}`}>
-        <div className="container">
-          <Link to="/" className="nav-link">
-            🏠 Home
-          </Link>
-          <Link to="/deals" className="nav-link deals">
-            🔥 Today&apos;s Deals
-          </Link>
-          <Link to="/new-arrivals" className="nav-link">
-            🆕 New Arrivals
-          </Link>
-          <Link to="/about" className="nav-link">
-            ℹ️ About Us
-          </Link>
-          <Link to="/contact" className="nav-link">
-            📞 Contact Us
-          </Link>
+        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+            <Link to="/" className="nav-link">
+              🏠 Home
+            </Link>
+            <Link to="/deals" className="nav-link deals">
+              🔥 Today&apos;s Deals
+            </Link>
+            <Link to="/new-arrivals" className="nav-link">
+              🆕 New Arrivals
+            </Link>
+            <Link to="/about" className="nav-link">
+              ℹ️ About Us
+            </Link>
+            <Link to="/contact" className="nav-link">
+              📞 Contact Us
+            </Link>
+
+            {isAuthenticated && (
+              <>
+                <span style={{ color: 'rgba(255,255,255,0.25)', margin: '0 10px', fontSize: '14px' }}>|</span>
+                <span className="nav-link" style={{ cursor: 'pointer', color: '#febd69', fontWeight: '700' }} onClick={() => navigate('/search?category=Spices')}>Whole Spices</span>
+                <span className="nav-link" style={{ cursor: 'pointer' }} onClick={() => navigate('/search?category=Powders')}>Ground Powders</span>
+                <span className="nav-link" style={{ cursor: 'pointer' }} onClick={() => navigate('/search?category=Blends')}>Gourmet Blends</span>
+                <span className="nav-link" style={{ cursor: 'pointer' }} onClick={() => navigate('/search?category=Organic')}>Organic Pantry</span>
+              </>
+            )}
+          </div>
+
+          {isAuthenticated && (
+            <span className="deals" style={{ fontSize: '13px', fontWeight: '700', color: '#febd69', whiteSpace: 'nowrap' }}>
+              🔥 Festive Spice Sale | Up to 60% Off
+            </span>
+          )}
         </div>
       </nav>
     </header>
