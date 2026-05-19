@@ -299,8 +299,8 @@ const EditProduct = () => {
         label,
         sku: `${codePrefix}-${code}-${(100 + i)}`,
         barcode: `89060000${100 + i}`,
-        price: '599',
-        mrp: '899',
+        price: form.price || '599',
+        mrp: form.mrp || '899',
         stock: '32',
         taxRate: 0,
         shippingWeight: '100',
@@ -326,8 +326,8 @@ const EditProduct = () => {
       label: 'Custom Option',
       sku: '',
       barcode: '',
-      price: '599',
-      mrp: '899',
+      price: form.price || '599',
+      mrp: form.mrp || '899',
       stock: '10',
       taxRate: 0,
       shippingWeight: '',
@@ -344,8 +344,13 @@ const EditProduct = () => {
   const toggleVariantStatus = id => setVariants(variants.map(vr => vr.id === id ? { ...vr, status: vr.status === 'active' ? 'inactive' : 'active' } : vr));
   const removeVariant = id => setVariants(variants.filter(v => v.id !== id));
   const handleVariantFiles = (id, e) => {
-    const files = Array.from(e.target.files);
-    setVariants(variants.map(v => v.id === id ? { ...v, files } : v));
+    const newFiles = Array.from(e.target.files);
+    const newPreviews = newFiles.map(f => URL.createObjectURL(f));
+    setVariants(variants.map(v => v.id === id ? {
+      ...v,
+      files: [...(v.files || []), ...newFiles],
+      localPreviews: [...(v.localPreviews || []), ...newPreviews]
+    } : v));
   };
 
   // Bulk Actions
@@ -374,6 +379,13 @@ const EditProduct = () => {
     const newPrice = prompt('Enter new selling price (₹) for selected variants:');
     if (newPrice !== null && !isNaN(newPrice)) {
       setVariants(variants.map(v => selectedVariants.includes(v.id) ? { ...v, price: newPrice } : v));
+    }
+  };
+
+  const bulkEditMrp = () => {
+    const newMrp = prompt('Enter new MRP (₹) for selected variants:');
+    if (newMrp !== null && !isNaN(newMrp)) {
+      setVariants(variants.map(v => selectedVariants.includes(v.id) ? { ...v, mrp: newMrp } : v));
     }
   };
 
@@ -600,32 +612,6 @@ const EditProduct = () => {
             </button>
           </div>
 
-          <div className="bento-card">
-            <h2 style={{ borderBottom: 'none', marginBottom: '8px' }}>Auto Generate Variants</h2>
-            <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '14px' }}>
-              {selectedAttrs.filter(a => a.selectedValues.length > 0).map(a => `${a.selectedValues.length} ${a.name}`).join(' × ') || '0 Attributes'} 
-              {selectedAttrs.some(a => a.selectedValues.length > 0) && ` = ${selectedAttrs.filter(a => a.selectedValues.length > 0).reduce((acc, a) => acc * a.selectedValues.length, 1)} Variants`}
-            </p>
-            <button 
-              type="button" 
-              className="btn-publish" 
-              style={{ width: '100%', padding: '10px' }}
-              onClick={handleManualGeneration}
-            >
-              Generate Variants
-            </button>
-            <div style={{ textAlign: 'center', marginTop: '10px' }}>
-              <span 
-                style={{ fontSize: '12px', color: '#4f46e5', cursor: 'pointer', fontWeight: '600' }}
-                onClick={() => {
-                  setVariants([]);
-                  generateVariantsFromAttrs(selectedAttrs);
-                }}
-              >
-                Regenerate
-              </span>
-            </div>
-          </div>
 
           <div className="tips-container">
             <h3>💡 Tips</h3>
@@ -755,9 +741,28 @@ const EditProduct = () => {
                         <span 
                           key={i} 
                           className={`attr-chip-premium ${isValSel ? 'active' : ''}`} 
+                          style={{ paddingRight: '24px', position: 'relative' }}
                           onClick={() => toggleAttrValue(sa.attrId, v)}
                         >
                           {v}
+                          <span 
+                            style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontWeight: 'bold', color: '#94a3b8', fontSize: '12px' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAttrs(selectedAttrs.map(a => {
+                                if (a.attrId !== sa.attrId) return a;
+                                return {
+                                  ...a,
+                                  values: (a.values || []).filter(val => val !== v),
+                                  selectedValues: (a.selectedValues || []).filter(val => val !== v)
+                                };
+                              }));
+                            }}
+                            onMouseEnter={(e) => e.target.style.color = '#ef4444'}
+                            onMouseLeave={(e) => e.target.style.color = '#94a3b8'}
+                          >
+                            ✕
+                          </span>
                         </span>
                       );
                     })}
@@ -797,6 +802,41 @@ const EditProduct = () => {
           {/* Card 4: Variants Table Matrix */}
           <div className="bento-card">
             <h2>📊 Variants ({variants.length})</h2>
+
+            {form.productType !== 'simple' && form.productType !== 'digital' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>Auto Generate Variant Combinations</span>
+                  <span style={{ fontSize: '12px', color: '#64748b' }}>
+                    {selectedAttrs.filter(a => a.selectedValues.length > 0).map(a => `${a.selectedValues.length} ${a.name}`).join(' × ') || '0 Attributes'} 
+                    {selectedAttrs.some(a => a.selectedValues.length > 0) && ` = ${selectedAttrs.filter(a => a.selectedValues.length > 0).reduce((acc, a) => acc * a.selectedValues.length, 1)} Variants`}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button 
+                    type="button" 
+                    className="btn-publish" 
+                    style={{ padding: '8px 16px', fontSize: '13px', margin: 0 }}
+                    onClick={handleManualGeneration}
+                  >
+                    Generate Variants
+                  </button>
+                  {variants.length > 0 && (
+                    <button 
+                      type="button" 
+                      className="btn-draft" 
+                      style={{ padding: '8px 16px', fontSize: '13px', margin: 0 }}
+                      onClick={() => {
+                        setVariants([]);
+                        generateVariantsFromAttrs(selectedAttrs);
+                      }}
+                    >
+                      Regenerate
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
             
             {form.productType === 'simple' || form.productType === 'digital' ? (
               <div className="wz-row">
@@ -815,13 +855,14 @@ const EditProduct = () => {
               </div>
             ) : variants.length === 0 ? (
               <p style={{ color: '#64748b', fontSize: '13px', textAlign: 'center', padding: '16px 0' }}>
-                No variants configured. Select attributes and generate variants.
+                No variants configured. Select attributes and click Generate Variants above.
               </p>
             ) : (
               <div>
                 <div className="variants-header-actions">
                   <div className="variants-bulk-actions">
-                    <button type="button" className="btn-bulk" onClick={bulkEditPrice}>✏️ Bulk Edit</button>
+                    <button type="button" className="btn-bulk" onClick={bulkEditPrice}>✏️ Bulk Price</button>
+                    <button type="button" className="btn-bulk" onClick={bulkEditMrp}>✏️ Bulk MRP</button>
                     <button type="button" className="btn-bulk" onClick={() => alert('Import CSV feature starting...')}>📤 Bulk Upload</button>
                     <button type="button" className="btn-bulk" onClick={() => alert('Downloading variant list CSV...')}>📥 Download</button>
                     {selectedVariants.length > 0 && (
@@ -886,14 +927,27 @@ const EditProduct = () => {
                               />
                             </td>
                             <td>
-                              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <input 
-                                  type="number" 
-                                  value={v.price} 
-                                  onChange={e => updateVariant(v.id, 'price', e.target.value)} 
-                                  style={{ width: '80px', padding: '6px' }} 
-                                />
-                                <span style={{ fontSize: '10px', color: '#64748b', textDecoration: 'line-through' }}>₹{v.mrp}</span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span style={{ fontSize: '10px', color: '#64748b', width: '28px' }}>SP:</span>
+                                  <input 
+                                    type="number" 
+                                    value={v.price} 
+                                    onChange={e => updateVariant(v.id, 'price', e.target.value)} 
+                                    style={{ width: '80px', padding: '4px', fontSize: '12px' }} 
+                                    placeholder="Selling Price"
+                                  />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span style={{ fontSize: '10px', color: '#64748b', width: '28px' }}>MRP:</span>
+                                  <input 
+                                    type="number" 
+                                    value={v.mrp} 
+                                    onChange={e => updateVariant(v.id, 'mrp', e.target.value)} 
+                                    style={{ width: '80px', padding: '4px', fontSize: '12px' }} 
+                                    placeholder="MRP"
+                                  />
+                                </div>
                               </div>
                             </td>
                             <td>
@@ -908,23 +962,69 @@ const EditProduct = () => {
                               </span>
                             </td>
                             <td>
-                              <div className="variant-media-list">
-                                {v.existingImages?.slice(0, 2).map((img, idx) => (
-                                  <img key={idx} src={img.url} alt="" className="variant-media-thumb" />
-                                ))}
-                                {previews.slice(0, Math.max(0, 2 - (v.existingImages?.length || 0))).map((p, idx) => (
-                                  <img key={idx} src={p} alt="" className="variant-media-thumb" />
-                                ))}
+                              <div className="variant-media-list" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                {/* Existing DB Images */}
+                                {(v.existingImages || []).map((img, idx) => {
+                                  const isVideo = img.url?.match(/\.(mp4|webm|mov|avi)$/i) || img.url?.includes('/video/upload/');
+                                  return (
+                                    <div key={`existing_${idx}`} className="media-thumb" style={{ width: '40px', height: '40px', position: 'relative' }}>
+                                      {isVideo ? (
+                                        <video src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+                                      ) : (
+                                        <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+                                      )}
+                                      <button 
+                                        type="button" 
+                                        className="remove-btn" 
+                                        style={{ width: '12px', height: '12px', fontSize: '8px', padding: 0, position: 'absolute', top: '-4px', right: '-4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
+                                        onClick={() => {
+                                          const updated = v.existingImages.filter((_, i) => i !== idx);
+                                          setVariants(variants.map(item => item.id === v.id ? { ...item, existingImages: updated } : item));
+                                        }}
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+
+                                {/* Newly Uploaded Previews */}
+                                {(v.localPreviews || []).map((src, idx) => {
+                                  const fileObj = v.files?.[idx];
+                                  const isVideo = fileObj?.type?.startsWith('video/') || fileObj?.name?.match(/\.(mp4|webm|mov|avi)$/i);
+                                  return (
+                                    <div key={`local_${idx}`} className="media-thumb" style={{ width: '40px', height: '40px', position: 'relative' }}>
+                                      {isVideo ? (
+                                        <video src={src} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+                                      ) : (
+                                        <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+                                      )}
+                                      <button 
+                                        type="button" 
+                                        className="remove-btn" 
+                                        style={{ width: '12px', height: '12px', fontSize: '8px', padding: 0, position: 'absolute', top: '-4px', right: '-4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
+                                        onClick={() => {
+                                          const newFiles = (v.files || []).filter((_, fileIdx) => fileIdx !== idx);
+                                          const newPreviews = (v.localPreviews || []).filter((_, previewIdx) => previewIdx !== idx);
+                                          setVariants(variants.map(item => item.id === v.id ? { ...item, files: newFiles, localPreviews: newPreviews } : item));
+                                        }}
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+
                                 <input 
                                   type="file" 
                                   multiple 
-                                  accept="image/*" 
+                                  accept="image/*,video/*" 
                                   onChange={e => handleVariantFiles(v.id, e)} 
                                   style={{ display: 'none' }} 
                                   id={`file_v_${v.id}`} 
                                 />
                                 <span 
-                                  style={{ cursor: 'pointer', color: '#4f46e5', fontSize: '12px', alignSelf: 'center', marginLeft: '4px' }}
+                                  style={{ cursor: 'pointer', color: '#4f46e5', fontSize: '12px', alignSelf: 'center', marginLeft: '4px', whiteSpace: 'nowrap' }}
                                   onClick={() => document.getElementById(`file_v_${v.id}`).click()}
                                 >
                                   📸 Add
@@ -1109,12 +1209,12 @@ const EditProduct = () => {
             </div>
 
             <div className="sidebar-section-title">Media</div>
-            {existingImages.length > 0 && (
-              <div className="media-previews" style={{ gap: '6px', marginBottom: '8px', marginTop: '0' }}>
+             {existingImages.length > 0 && (
+              <div className="media-previews" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px', marginTop: '0' }}>
                 {existingImages.map((img, i) => (
-                  <div key={i} className="media-thumb" style={{ width: '48px', height: '48px' }}>
-                    <img src={img.url} alt="" />
-                    <button type="button" className="remove-btn" style={{ width: '14px', height: '14px', fontSize: '9px' }} onClick={() => removeExistingMedia(i)}>✕</button>
+                  <div key={i} className="media-thumb" style={{ width: '56px', height: '56px', position: 'relative', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                    <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button type="button" className="remove-btn" style={{ position: 'absolute', top: '2px', right: '2px', width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} onClick={() => removeExistingMedia(i)}>✕</button>
                   </div>
                 ))}
               </div>
@@ -1128,11 +1228,11 @@ const EditProduct = () => {
               <input type="file" ref={fileRef} style={{ display: 'none' }} multiple accept="image/*,video/*" onChange={handleMedia} />
             </div>
             {previews.length > 0 && (
-              <div className="media-previews" style={{ gap: '6px', marginTop: '10px' }}>
+              <div className="media-previews" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
                 {previews.map((src, i) => (
-                  <div key={i} className="media-thumb" style={{ width: '48px', height: '48px' }}>
-                    <img src={src} alt="" />
-                    <button type="button" className="remove-btn" style={{ width: '14px', height: '14px', fontSize: '9px' }} onClick={() => removeMedia(i)}>✕</button>
+                  <div key={i} className="media-thumb" style={{ width: '56px', height: '56px', position: 'relative', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                    <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button type="button" className="remove-btn" style={{ position: 'absolute', top: '2px', right: '2px', width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} onClick={() => removeMedia(i)}>✕</button>
                   </div>
                 ))}
               </div>

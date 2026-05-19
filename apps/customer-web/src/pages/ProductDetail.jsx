@@ -5,7 +5,7 @@ import { getProductDetails, createReview } from '../redux/slices/productSlice';
 import { addToCart } from '../redux/slices/cartSlice';
 import { addToWishlist, removeFromWishlist } from '../redux/slices/wishlistSlice';
 import { toast } from 'react-toastify';
-import { FaStar, FaShoppingCart, FaTruck, FaShieldAlt, FaExchangeAlt, FaHeart, FaRegHeart } from 'react-icons/fa';
+import { FaStar, FaShoppingCart, FaTruck, FaShieldAlt, FaExchangeAlt, FaHeart, FaRegHeart, FaLock, FaStore } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
@@ -22,8 +22,10 @@ const ProductDetail = () => {
   const isInWishlist = wishlist?.some(item => item._id === product?._id);
 
   const [selectedImage, setSelectedImage] = useState(0);
+  const [activeImages, setActiveImages] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState(0);
+  
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewData, setReviewData] = useState({
     rating: 5,
@@ -59,7 +61,15 @@ const ProductDetail = () => {
     window.scrollTo(0, 0);
   }, [id]);
 
-  // Update prices when variant changes or product loads
+  const getVariantLabel = (variant) => {
+    if (!variant) return '';
+    if (variant.attributes && variant.attributes.length > 0) {
+      return variant.attributes.map(a => a.value).join(' / ');
+    }
+    return variant.weight || '';
+  };
+
+  // Update prices and images when variant changes or product loads
   useEffect(() => {
     if (product) {
       if (product.variants && product.variants.length > 0) {
@@ -67,13 +77,22 @@ const ProductDetail = () => {
         setCurrentPrice(variant.price);
         setCurrentMRP(variant.mrp);
         setCurrentStock(variant.stock);
-        setCurrentWeight(variant.weight);
+        setCurrentWeight(getVariantLabel(variant));
+
+        // Switch to variant specific images if they exist, else fallback to product images
+        if (variant.images && variant.images.length > 0) {
+          setActiveImages(variant.images);
+        } else {
+          setActiveImages(product.images || []);
+        }
+        setSelectedImage(0);
       } else {
         // Fallback to default pricing
         setCurrentPrice(product.price);
         setCurrentMRP(product.mrp);
         setCurrentStock(product.stock);
         setCurrentWeight('');
+        setActiveImages(product.images || []);
       }
     }
   }, [product, selectedVariant]);
@@ -93,7 +112,7 @@ const ProductDetail = () => {
       await dispatch(addToCart({
         productId: product._id,
         quantity,
-        variant: currentWeight || product.variants?.[selectedVariant]?.weight || ''
+        variant: currentWeight || getVariantLabel(product.variants?.[selectedVariant]) || ''
       })).unwrap();
       
       toast.success('Added to cart successfully!');
@@ -104,7 +123,9 @@ const ProductDetail = () => {
 
   const handleBuyNow = async () => {
     await handleAddToCart();
-    navigate('/cart');
+    if(isAuthenticated) {
+      navigate('/checkout');
+    }
   };
 
   const handleWishlistToggle = async () => {
@@ -128,12 +149,10 @@ const ProductDetail = () => {
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
-    
     if (!isAuthenticated) {
       toast.error('Please login to write a review');
       return;
     }
-
     try {
       await dispatch(createReview({
         ...reviewData,
@@ -162,331 +181,365 @@ const ProductDetail = () => {
     ? Math.round(((currentMRP - currentPrice) / currentMRP) * 100) 
     : 0;
 
+  // Derive date for delivery estimate (e.g. 3 days from now)
+  const deliveryDate = new Date();
+  deliveryDate.setDate(deliveryDate.getDate() + 3);
+  const deliveryOptions = { weekday: 'long', day: 'numeric', month: 'short' };
+  const deliveryDateString = deliveryDate.toLocaleDateString('en-IN', deliveryOptions);
+
   return (
-    <div className="product-detail">
-      <div className="container">
-        <div className="product-detail-grid">
-          {/* Left: Images */}
-          <div className="product-images-section">
-            <div className="image-thumbnails">
-              {product.images?.map((image, index) => (
+    <div className="product-detail-amazon">
+      <div className="amazon-container">
+        
+        {/* Amazon-Style Breadcrumbs (mocked) */}
+        <div className="amz-breadcrumbs">
+          <span>Home</span> &rsaquo; <span>{product.category || 'Shop'}</span> &rsaquo; <span>{product.brand || 'Amrit Rasoi'}</span>
+        </div>
+
+        <div className="amz-layout-grid">
+          
+          {/* LEFT: GALLERY */}
+          <div className="amz-gallery-col">
+            <div className="amz-thumbnails-list">
+              {activeImages?.map((image, index) => (
                 <div
                   key={index}
-                  className={`thumbnail ${selectedImage === index ? 'active' : ''}`}
+                  className={`amz-thumb ${selectedImage === index ? 'active' : ''}`}
+                  onMouseEnter={() => setSelectedImage(index)}
                   onClick={() => setSelectedImage(index)}
                 >
                   <img src={image.url} alt={`${product.name} ${index + 1}`} />
                 </div>
               ))}
             </div>
-            <div className="main-image">
-              <img src={product.images?.[selectedImage]?.url} alt={product.name} />
-            </div>
-          </div>
-
-          {/* Middle: Details */}
-          <div className="product-details-section">
-            <h1 className="product-title">{product.name}</h1>
-            
-            <div className="product-meta">
-              <div className="rating-section">
-                <div className="stars">
-                  {[...Array(5)].map((_, i) => (
-                    <FaStar
-                      key={i}
-                      className={i < Math.floor(product.ratings || 0) ? 'star filled' : 'star'}
-                    />
-                  ))}
-                </div>
-                <span className="rating-text">{(product.ratings || 0).toFixed(1)}</span>
-                <span className="reviews-count">({product.numOfReviews || 0} reviews)</span>
-              </div>
-              
-              <div className="brand-badge">
-                Brand: <strong>{product.brand || 'Amrit Rasoi'}</strong>
-              </div>
-            </div>
-
-            <hr />
-
-            <div className="price-section">
-              <div className="price-row">
-                <span className="price-label">Price:</span>
-                <div className="price-info">
-                  <span className="current-price">₹{currentPrice}</span>
-                  {currentMRP > currentPrice && (
-                    <>
-                      <span className="original-price">₹{currentMRP}</span>
-                      <span className="discount-badge">Save ₹{currentMRP - currentPrice}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-              <p className="tax-info">Inclusive of all taxes</p>
-              {discountPercent > 0 && (
-                <p className="discount-info">You save {discountPercent}% on this product!</p>
+            <div className="amz-main-image-view">
+              {activeImages && activeImages.length > 0 ? (
+                <img src={activeImages[selectedImage]?.url} alt={product.name} className="img-fluid" />
+              ) : (
+                <div className="no-image-placeholder">No Image Available</div>
               )}
             </div>
+          </div>
 
-            <hr />
+          {/* CENTER: PRODUCT INFO */}
+          <div className="amz-info-col">
+            <h1 className="amz-product-title">{product.name}</h1>
+            <a href="#" className="amz-brand-link">Visit the {product.brand || 'Amrit Rasoi'} Store</a>
+            
+            <div className="amz-ratings-row">
+              <span className="amz-rating-number">{(product.ratings || 0).toFixed(1)}</span>
+              <div className="amz-stars">
+                {[...Array(5)].map((_, i) => (
+                  <FaStar key={i} className={i < Math.round(product.ratings || 0) ? 'star-filled' : 'star-empty'} />
+                ))}
+              </div>
+              <span className="amz-ratings-count">⌄ {product.numOfReviews || 0} ratings</span>
+            </div>
 
-            {/* Variants */}
+            <div className="amz-badges-row">
+               {(product.inTodaysDeal || product.isFeatured) && (
+                 <span className="amz-choice-badge">
+                   <span className="amz-badge-text">Amrit's Choice</span>
+                   <span className="amz-badge-arrow"></span>
+                 </span>
+               )}
+               <span className="amz-bought-past-month">100+ bought in past month</span>
+            </div>
+
+            <hr className="amz-divider" />
+
+            {/* Price Block */}
+            <div className="amz-price-block">
+              {discountPercent > 0 && <span className="amz-discount-tag">-{discountPercent}%</span>}
+              <span className="amz-selling-price">
+                <span className="amz-rupee">₹</span>{currentPrice}
+              </span>
+              <div className="amz-mrp-row">
+                <span className="amz-mrp-label">M.R.P.: </span>
+                <span className="amz-mrp-value">₹{currentMRP}</span>
+              </div>
+              <p className="amz-tax-info">Inclusive of all taxes</p>
+            </div>
+
+            <hr className="amz-divider" />
+
+            {/* Offers Grid */}
+            <div className="amz-offers-section">
+              <h3 className="amz-section-subtitle">Offers</h3>
+              <div className="amz-offers-grid">
+                <div className="amz-offer-card">
+                  <h4>Cashback</h4>
+                  <p>Up to ₹50.00 cashback as Amrit Pay Balance.</p>
+                </div>
+                <div className="amz-offer-card">
+                  <h4>Bank Offer</h4>
+                  <p>10% instant discount on HDFC Bank Credit Cards.</p>
+                </div>
+                <div className="amz-offer-card">
+                  <h4>Partner Offers</h4>
+                  <p>Get GST invoice and save up to 18% on business purchases.</p>
+                </div>
+              </div>
+            </div>
+
+            <hr className="amz-divider" />
+
+            {/* Variant Selector */}
             {product.variants && product.variants.length > 0 && (
-              <div className="variants-section">
-                <h3>Select Weight:</h3>
-                <div className="variants-grid">
+              <div className="amz-variants-wrapper">
+                <h3 className="amz-variant-title">{product.variantType || 'Size / Weight'}: <strong>{currentWeight}</strong></h3>
+                <div className="amz-variants-flex">
                   {product.variants.map((variant, index) => (
-                    <button
+                    <div
                       key={index}
-                      className={`variant-btn ${selectedVariant === index ? 'active' : ''}`}
+                      className={`amz-variant-chip ${selectedVariant === index ? 'active' : ''}`}
                       onClick={() => handleVariantChange(index)}
                     >
-                      <div className="variant-weight">{variant.weight}</div>
-                      <div className="variant-price">₹{variant.price}</div>
-                    </button>
+                      <span className="amz-variant-val">{getVariantLabel(variant)}</span>
+                      <span className="amz-variant-prc">₹{variant.price}</span>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Quantity */}
-            <div className="quantity-section">
-              <h3>Quantity:</h3>
-              <div className="quantity-selector">
-                <button
-                  className="qty-btn"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                >
-                  -
-                </button>
-                <span className="qty-value">{quantity}</span>
-                <button
-                  className="qty-btn"
-                  onClick={() => setQuantity(Math.min(10, quantity + 1))}
-                >
-                  +
-                </button>
-              </div>
+            {/* Product Specifics */}
+            <div className="amz-tech-details">
+              <table>
+                <tbody>
+                  <tr>
+                    <td className="amz-td-label">Brand</td>
+                    <td className="amz-td-value">{product.brand || 'Amrit Rasoi'}</td>
+                  </tr>
+                  <tr>
+                    <td className="amz-td-label">Item Weight</td>
+                    <td className="amz-td-value">{currentWeight || 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td className="amz-td-label">Form</td>
+                    <td className="amz-td-value">{product.category || 'N/A'}</td>
+                  </tr>
+                  {product.specifications && product.specifications.map((spec, i) => (
+                     <tr key={i}>
+                       <td className="amz-td-label">{spec.key}</td>
+                       <td className="amz-td-value">{spec.value}</td>
+                     </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+            
+            <hr className="amz-divider" />
 
-            {/* Stock Status */}
-            {currentStock > 0 ? (
-              <p className="in-stock">✓ In Stock ({currentStock} units available)</p>
-            ) : (
-              <p className="out-of-stock">✗ Currently Out of Stock</p>
-            )}
-
-            <hr />
-
-            {/* Description */}
-            <div className="description-section">
+            {/* About this item (Description bullets) */}
+            <div className="amz-about-item">
               <h3>About this item</h3>
-              <p>{product.description || 'Premium quality product from Amrit Rasoi.'}</p>
+              <ul className="amz-bullets">
+                {product.description 
+                  ? product.description.split('\n').filter(line => line.trim() !== '').map((line, i) => (
+                      <li key={i}>{line}</li>
+                    ))
+                  : <li>Premium quality product directly sourced and verified by Amrit Rasoi.</li>
+                }
+              </ul>
             </div>
           </div>
 
-          {/* Right: Buy Box */}
-          <div className="buy-box">
-            <div className="buy-box-card">
-              <div className="price-box">
-                <span className="price">₹{currentPrice}</span>
-                {discountPercent > 0 && (
-                  <span className="save-text">Save ₹{currentMRP - currentPrice}</span>
-                )}
+          {/* RIGHT: BUY BOX */}
+          <div className="amz-buybox-col">
+            <div className="amz-buybox-card">
+              <div className="amz-buybox-price">
+                <span className="amz-rupee">₹</span>{currentPrice}
               </div>
-
-              <div className="delivery-info">
-                <FaTruck className="icon" />
-                <div>
-                  <strong>Free Delivery</strong>
-                  <p>On orders above ₹500</p>
-                </div>
+              
+              <div className="amz-delivery-date">
+                FREE delivery <strong>{deliveryDateString}</strong>. Order within <span className="amz-green-text">5 hrs 30 mins</span>.
+              </div>
+              <div className="amz-location-marker">
+                <FaTruck className="amz-loc-icon"/> Deliver to Customer - Anywhere
               </div>
 
               {currentStock > 0 ? (
-                <>
-                  <motion.button
-                    className="btn btn-primary btn-full"
-                    onClick={handleAddToCart}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <FaShoppingCart /> Add to Cart
-                  </motion.button>
-                  <motion.button
-                    className="btn btn-secondary btn-full"
-                    onClick={handleBuyNow}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Buy Now
-                  </motion.button>
-                </>
+                <div className="amz-stock-status">In stock</div>
               ) : (
-                <button className="btn btn-full" disabled>
-                  Out of Stock
-                </button>
+                <div className="amz-stock-status out">Currently unavailable.</div>
               )}
 
-              <motion.button
-                className={`btn btn-outline btn-full wishlist-btn ${isInWishlist ? 'active' : ''}`}
-                onClick={handleWishlistToggle}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-              >
-                {isInWishlist ? <FaHeart className="heart-filled" /> : <FaRegHeart />} 
-                {isInWishlist ? 'Saved in Wishlist' : 'Add to Wishlist'}
-              </motion.button>
+              {currentStock > 0 && (
+                <>
+                  <div className="amz-quantity-select">
+                    <label>Quantity: </label>
+                    <select value={quantity} onChange={(e) => setQuantity(Number(e.target.value))}>
+                      {[...Array(Math.min(10, currentStock))].map((_, i) => (
+                        <option key={i+1} value={i+1}>{i+1}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div className="features-list">
-                <div className="feature-item">
-                  <FaShieldAlt className="icon" />
-                  <span>Secure transaction</span>
+                  <button className="amz-btn amz-btn-cart" onClick={handleAddToCart}>
+                    Add to Cart
+                  </button>
+                  <button className="amz-btn amz-btn-buy" onClick={handleBuyNow}>
+                    Buy Now
+                  </button>
+                </>
+              )}
+
+              <div className="amz-buybox-ledger">
+                <div className="ledger-row">
+                  <span className="ledger-label">Ships from</span>
+                  <span className="ledger-value">Amrit Rasoi</span>
                 </div>
-                <div className="feature-item">
-                  <FaExchangeAlt className="icon" />
-                  <span>7-day return policy</span>
+                <div className="ledger-row">
+                  <span className="ledger-label">Sold by</span>
+                  <span className="ledger-value">{product.brand || 'Amrit Rasoi'}</span>
+                </div>
+                <div className="ledger-row secure-tx">
+                  <FaLock className="secure-icon" /> Secure transaction
                 </div>
               </div>
+
+              <hr className="amz-divider" />
+              
+              <button 
+                className={`amz-wishlist-btn ${isInWishlist ? 'active' : ''}`}
+                onClick={handleWishlistToggle}
+              >
+                {isInWishlist ? 'Added to Wish List' : 'Add to Wish List'}
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Reviews Section */}
-        <div className="reviews-section">
-          <div className="reviews-header">
-            <h2>Customer Reviews</h2>
-            {product.numOfReviews > 0 && (
-              <div className="reviews-summary">
-                <div className="average-rating">
-                  <span className="rating-number">{(product.ratings || 0).toFixed(1)}</span>
-                  <div className="stars">
-                    {[...Array(5)].map((_, i) => (
-                      <FaStar
-                        key={i}
-                        className={i < Math.floor(product.ratings || 0) ? 'star filled' : 'star'}
-                      />
-                    ))}
+        {/* BOTTOM SECTIONS */}
+        <div className="amz-bottom-sections">
+          
+          {/* Recommendations */}
+          {recommendations.length > 0 && (
+            <div className="amz-recommendations">
+              <h2>Related items bought by customers</h2>
+              <div className="amz-scroll-row">
+                {recommendations.map(prod => (
+                  <div className="amz-rec-card" key={prod._id} onClick={() => navigate(`/product/${prod._id}`)}>
+                    <img src={prod.images?.[0]?.url || ''} alt={prod.name} />
+                    <span className="rec-title">{prod.name}</span>
+                    <div className="rec-rating">
+                      <div className="amz-stars">
+                        {[...Array(5)].map((_, i) => (
+                          <FaStar key={i} className={i < Math.round(prod.ratings || 0) ? 'star-filled' : 'star-empty'} />
+                        ))}
+                      </div>
+                      <span className="rec-count">{prod.numOfReviews || 0}</span>
+                    </div>
+                    <span className="rec-price">₹{prod.price}</span>
                   </div>
-                  <span className="total-reviews">{product.numOfReviews} reviews</span>
-                </div>
+                ))}
               </div>
-            )}
-            <button
-              className="btn btn-outline"
-              onClick={() => setShowReviewForm(!showReviewForm)}
-            >
-              Write a Review
-            </button>
-          </div>
-
-          {/* Review Form */}
-          {showReviewForm && (
-            <motion.form
-              className="review-form"
-              onSubmit={handleSubmitReview}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              <div className="form-group">
-                <label>Rating</label>
-                <div className="star-rating">
-                  {[5, 4, 3, 2, 1].map((star) => (
-                    <label key={star}>
-                      <input
-                        type="radio"
-                        name="rating"
-                        value={star}
-                        checked={reviewData.rating === star}
-                        onChange={(e) => setReviewData({ ...reviewData, rating: Number(e.target.value) })}
-                      />
-                      <span>{star} ★</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Review Title</label>
-                <input
-                  type="text"
-                  value={reviewData.title}
-                  onChange={(e) => setReviewData({ ...reviewData, title: e.target.value })}
-                  required
-                  placeholder="Summarize your experience"
-                />
-              </div>
-              <div className="form-group">
-                <label>Review</label>
-                <textarea
-                  value={reviewData.comment}
-                  onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
-                  required
-                  rows="5"
-                  placeholder="Share your thoughts about this product"
-                ></textarea>
-              </div>
-              <button type="submit" className="btn btn-primary">
-                Submit Review
-              </button>
-            </motion.form>
+            </div>
           )}
 
-          {/* Reviews List */}
-          <div className="reviews-list">
-            {product.reviews && product.reviews.length > 0 ? (
-              product.reviews.map((review) => (
-                <div key={review._id} className="review-card">
-                  <div className="review-header">
-                    <div className="reviewer-info">
-                      <div className="reviewer-avatar">
-                        {review.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <h4>{review.name}</h4>
-                        {review.verifiedPurchase && (
-                          <span className="verified-badge">✓ Verified Purchase</span>
-                        )}
-                      </div>
+          {/* Customer Reviews Section */}
+          <div className="amz-reviews-container">
+             <h2>Customer Reviews</h2>
+             <div className="amz-reviews-grid">
+                
+                {/* Reviews Summary Column */}
+                <div className="amz-reviews-summary-col">
+                  <div className="amz-big-rating">
+                    <div className="amz-stars-large">
+                        {[...Array(5)].map((_, i) => (
+                          <FaStar key={i} className={i < Math.round(product.ratings || 0) ? 'star-filled' : 'star-empty'} />
+                        ))}
                     </div>
-                    <div className="review-rating">
-                      {[...Array(5)].map((_, i) => (
-                        <FaStar
-                          key={i}
-                          className={i < review.rating ? 'star filled' : 'star'}
-                        />
-                      ))}
-                    </div>
+                    <span className="amz-rating-out-of">{(product.ratings || 0).toFixed(1)} out of 5</span>
                   </div>
-                  <h3 className="review-title">{review.title}</h3>
-                  <p className="review-comment">{review.comment}</p>
-                  <span className="review-date">
-                    {new Date(review.createdAt).toLocaleDateString('en-IN', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </span>
+                  <p className="amz-global-ratings">{product.numOfReviews || 0} global ratings</p>
+
+                  <div className="amz-review-action">
+                    <h3>Review this product</h3>
+                    <p>Share your thoughts with other customers</p>
+                    <button className="amz-write-review-btn" onClick={() => setShowReviewForm(!showReviewForm)}>
+                      Write a product review
+                    </button>
+                  </div>
+
+                  {showReviewForm && (
+                    <form className="amz-review-form" onSubmit={handleSubmitReview}>
+                      <div className="form-group">
+                        <label>Overall rating</label>
+                        <div className="star-rating">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <label key={star}>
+                              <input
+                                type="radio"
+                                name="rating"
+                                value={star}
+                                checked={reviewData.rating === star}
+                                onChange={(e) => setReviewData({ ...reviewData, rating: Number(e.target.value) })}
+                              />
+                              <span>{star} ★</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label>Add a headline</label>
+                        <input
+                          type="text"
+                          value={reviewData.title}
+                          onChange={(e) => setReviewData({ ...reviewData, title: e.target.value })}
+                          required
+                          placeholder="What's most important to know?"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Add a written review</label>
+                        <textarea
+                          value={reviewData.comment}
+                          onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
+                          required
+                          rows="4"
+                          placeholder="What did you like or dislike? What did you use this product for?"
+                        ></textarea>
+                      </div>
+                      <button type="submit" className="amz-submit-btn">Submit</button>
+                    </form>
+                  )}
                 </div>
-              ))
-            ) : (
-              <p className="no-reviews">No reviews yet. Be the first to review this product!</p>
-            )}
+
+                {/* Reviews List Column */}
+                <div className="amz-reviews-list-col">
+                  {product.reviews && product.reviews.length > 0 ? (
+                    product.reviews.map((review) => (
+                      <div key={review._id} className="amz-review-item">
+                        <div className="amz-reviewer-profile">
+                          <div className="amz-avatar">{review.name.charAt(0).toUpperCase()}</div>
+                          <span className="amz-reviewer-name">{review.name}</span>
+                        </div>
+                        <div className="amz-review-rating-title">
+                          <div className="amz-stars">
+                            {[...Array(5)].map((_, i) => (
+                              <FaStar key={i} className={i < review.rating ? 'star-filled' : 'star-empty'} />
+                            ))}
+                          </div>
+                          <span className="amz-review-title">{review.title}</span>
+                        </div>
+                        <span className="amz-review-date">
+                          Reviewed in India on {new Date(review.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </span>
+                        {review.verifiedPurchase && (
+                          <span className="amz-verified-badge">Verified Purchase</span>
+                        )}
+                        <p className="amz-review-text">{review.comment}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="amz-no-reviews">No customer reviews yet.</p>
+                  )}
+                </div>
+             </div>
           </div>
         </div>
-
-        {/* Frequently Bought Together recommendations */}
-        {recommendations.length > 0 && (
-          <div className="recommendations-section" style={{ marginTop: '40px' }}>
-            <h2 style={{ marginBottom: '20px', fontSize: '1.8rem', fontWeight: 'bold' }}>Frequently Bought Together</h2>
-            <div className="recommendations-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
-              {recommendations.map(prod => (
-                <ProductCard key={prod._id} product={prod} />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -24,7 +24,8 @@ import {
   FaUserCog,
   FaUsersCog,
   FaChevronRight,
-  FaChartLine
+  FaChartLine,
+  FaFileCsv
 } from 'react-icons/fa';
 import './Sidebar.css';
 
@@ -76,6 +77,7 @@ const Sidebar = ({ isOpen }) => {
     { path: '/testimonials', icon: <FaComments />, label: 'Testimonials' },
     { path: '/badges', icon: <FaAward />, label: 'Trust Badges' },
     { path: '/newsletter', icon: <FaEnvelope />, label: 'Newsletter' },
+    { path: '/export', icon: <FaFileCsv />, label: 'Data Export' },
     { path: '/settings', icon: <FaCog />, label: 'Settings' },
   ];
 

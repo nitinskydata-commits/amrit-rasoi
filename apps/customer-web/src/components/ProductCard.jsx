@@ -43,7 +43,9 @@ const ProductCard = ({ product }) => {
       await dispatch(addToCart({
         productId: product._id,
         quantity: 1,
-        variant: product.variants?.[0]?.weight || ''
+        variant: (product.variants?.[0]?.attributes && product.variants[0].attributes.length > 0)
+          ? product.variants[0].attributes.map(a => a.value).join(' / ')
+          : (product.variants?.[0]?.weight || '')
       })).unwrap();
       
       toast.success('Added to cart successfully!');

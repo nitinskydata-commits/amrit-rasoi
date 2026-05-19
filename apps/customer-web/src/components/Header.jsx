@@ -246,17 +246,23 @@ const Header = () => {
             {isAuthenticated && (
               <>
                 <span style={{ color: 'rgba(255,255,255,0.25)', margin: '0 10px', fontSize: '14px' }}>|</span>
-                <span className="nav-link" style={{ cursor: 'pointer', color: '#febd69', fontWeight: '700' }} onClick={() => navigate('/search?category=Spices')}>Whole Spices</span>
-                <span className="nav-link" style={{ cursor: 'pointer' }} onClick={() => navigate('/search?category=Powders')}>Ground Powders</span>
-                <span className="nav-link" style={{ cursor: 'pointer' }} onClick={() => navigate('/search?category=Blends')}>Gourmet Blends</span>
-                <span className="nav-link" style={{ cursor: 'pointer' }} onClick={() => navigate('/search?category=Organic')}>Organic Pantry</span>
+                {(settings?.homepageCategories ? settings.homepageCategories.split(',') : ['Spices', 'Powders', 'Blends', 'Organic']).map((cat, idx) => (
+                  <span 
+                    key={idx} 
+                    className="nav-link" 
+                    style={{ cursor: 'pointer', ...(idx === 0 ? {color: '#febd69', fontWeight: '700'} : {}) }} 
+                    onClick={() => navigate(`/search?category=${encodeURIComponent(cat.trim())}`)}
+                  >
+                    {cat.trim()}
+                  </span>
+                ))}
               </>
             )}
           </div>
 
           {isAuthenticated && (
             <span className="deals" style={{ fontSize: '13px', fontWeight: '700', color: '#febd69', whiteSpace: 'nowrap' }}>
-              🔥 Festive Spice Sale | Up to 60% Off
+              🔥 {settings?.homepageDealsHeader || "Festive Spice Sale | Up to 60% Off"}
             </span>
           )}
         </div>

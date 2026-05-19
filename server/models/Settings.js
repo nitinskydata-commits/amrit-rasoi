@@ -104,7 +104,21 @@ const settingsSchema = new mongoose.Schema({
   
   // Other Settings
   gstNumber: String,
-  fssaiNumber: String
+  fssaiNumber: String,
+
+  // Homepage Settings
+  homepageDealsHeader: {
+    type: String,
+    default: '🔥 SBMI Smart Deals | Spices & Pantry'
+  },
+  homepageRecommendationMode: {
+    type: String,
+    default: 'personalized'
+  },
+  homepageCategories: {
+    type: [String],
+    default: ['Spices', 'Powders', 'Blends', 'Organic']
+  }
 }, {
   timestamps: true
 });

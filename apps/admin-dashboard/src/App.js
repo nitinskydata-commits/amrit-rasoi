@@ -33,6 +33,7 @@ import StaffManagement from './pages/StaffManagement';
 import Inventory from './pages/Inventory';
 import KYC from './pages/KYC';
 import Analytics from './pages/Analytics';
+import ExportCenter from './pages/ExportCenter';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -97,6 +98,7 @@ function App() {
               <Route path="/audit-logs" element={<AuditLogs />} />
               <Route path="/staff" element={<StaffManagement />} />
               <Route path="/inventory" element={<Inventory />} />
+              <Route path="/export" element={<ExportCenter />} />
             </Routes>
           </div>
         </div>

@@ -14,6 +14,7 @@ import './Home.css';
 const Home = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector(state => state.auth);
+  const { settings } = useSelector(state => state.settings);
   
   const [dealStrip, setDealStrip] = useState([]);
   const [personalizedRecs, setPersonalizedRecs] = useState([]);
@@ -22,6 +23,37 @@ const Home = () => {
   const [heroSlides, setHeroSlides] = useState([]);
   const [overlayAds, setOverlayAds] = useState([]);
   const [currentSlideIdx, setCurrentSlideIdx] = useState(0);
+
+  const categoryMetaData = {
+    'Spices': {
+      title: 'Premium Spices',
+      badge: '🌶️ Hot Deals',
+      img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=400'
+    },
+    'Powders': {
+      title: 'Spice Powders',
+      badge: '🧂 Pure Ground',
+      img: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&w=400'
+    },
+    'Blends': {
+      title: 'Gourmet Blends',
+      badge: '🥘 Rich Masalas',
+      img: 'https://images.unsplash.com/photo-1532336414038-cf190733eb37?auto=format&fit=crop&q=80&w=400'
+    },
+    'Organic': {
+      title: 'Organic Pantry',
+      badge: '🌿 100% Organic',
+      img: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&q=80&w=400'
+    }
+  };
+
+  const getCategoryDetails = (catName) => {
+    return categoryMetaData[catName] || {
+      title: catName,
+      badge: '🔥 Popular',
+      img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=400'
+    };
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -117,11 +149,13 @@ const Home = () => {
       try {
         const token = localStorage.getItem('token');
         const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-        if (isAuthenticated) {
+        const isLatestMode = settings?.homepageRecommendationMode === 'latest';
+        
+        if (isAuthenticated && !isLatestMode) {
           const { data } = await axios.get(`${API_BASE_URL}/products/personalized-feed`, config);
           if (!cancelled) setPersonalizedRecs(data.products || []);
         } else {
-          const { data } = await axios.get(`${API_BASE_URL}/products?sort=rating&limit=8`);
+          const { data } = await axios.get(`${API_BASE_URL}/products?sort=-createdAt&limit=8`);
           if (!cancelled) setPersonalizedRecs(data.products || []);
         }
       } catch (err) {
@@ -134,76 +168,45 @@ const Home = () => {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, settings?.homepageRecommendationMode]);
 
   const handleCategoryChange = (category) => {
     navigate(`/search?category=${encodeURIComponent(category)}`);
   };
 
-  const defaultOverlayCards = [
-    {
-      _id: 'default-card-1',
-      title: 'Spices & Herbs | Up to 40% Off',
-      description: 'Whole Spices, Powders, Seeds & Herbs',
-      image: { url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=400' },
-      link: '/search?category=Spices',
-      linkText: 'Shop Premium Spices',
-      mediaType: 'image',
-      items: [
-        { label: 'Whole Spices', category: 'Spices', img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Spice Powders', category: 'Powders', img: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Aromatic Seeds', category: 'Seeds', img: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Herbal Infusions', category: 'Herbs', img: 'https://images.unsplash.com/photo-1515002246390-7bf7e8f87b54?auto=format&fit=crop&q=80&w=300' }
-      ]
-    },
-    {
-      _id: 'default-card-2',
-      title: 'Amrit Rasoi Culinary Spices',
-      description: 'Pure Turmeric, Coriander, Kashmiri Chilli & Black Pepper',
-      image: { url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=400' },
-      link: '/search?category=Powders',
-      linkText: 'Browse Ground Powders',
-      mediaType: 'image',
-      items: [
-        { label: 'Turmeric Powder', category: 'Powders', img: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Coriander Powder', category: 'Powders', img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Kashmiri Mirch', category: 'Powders', img: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Black Pepper', category: 'Spices', img: 'https://images.unsplash.com/photo-1515002246390-7bf7e8f87b54?auto=format&fit=crop&q=80&w=300' }
-      ]
-    },
-    {
-      _id: 'default-card-3',
-      title: 'Signature Masalas & Gourmet Blends',
-      description: 'Garam Masala, Biryani Blends, Tea Spices & Chaat Seasonings',
-      image: { url: 'https://images.unsplash.com/photo-1532336414038-cf190733eb37?auto=format&fit=crop&q=80&w=400' },
-      link: '/search?category=Blends',
-      linkText: 'Explore Special Blends',
-      mediaType: 'image',
-      items: [
-        { label: 'Garam Masala', category: 'Blends', img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Biryani Masala', category: 'Blends', img: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Tea Masala', category: 'Blends', img: 'https://images.unsplash.com/photo-1515002246390-7bf7e8f87b54?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Chaat Masala', category: 'Blends', img: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?auto=format&fit=crop&q=80&w=300' }
-      ]
-    },
-    {
-      _id: 'default-card-4',
-      title: 'SBMI Bulk Business | Save Big',
-      description: 'Bulk Spice Packs, Festive Boxes, Direct Sourcing & Wholesale Pricing',
-      image: { url: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=400' },
-      link: '/login',
-      linkText: 'Create Free Account',
-      mediaType: 'image',
-      items: [
-        { label: 'Bulk Spice Packs', category: 'Spices', img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Festive Gift Boxes', category: 'Spices', img: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Direct Farm Sourcing', category: 'Spices', img: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&q=80&w=300' },
-        { label: 'Wholesale Discounts', category: 'Spices', img: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=300' }
-      ]
-    }
-  ];
+  const categoriesList = settings?.homepageCategories ? settings.homepageCategories.split(',').map(c => c.trim()) : ['Spices', 'Powders', 'Blends', 'Organic'];
+  
+  const generateOverlayCards = () => {
+    return categoriesList.slice(0, 4).map((cat, idx) => {
+      const meta = getCategoryDetails(cat);
+      
+      // We create standard spice images for the sub-items so we don't get weird cat or gift box images
+      const subImages = [
+        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300',
+        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300',
+        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300',
+        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300'
+      ];
+      
+      return {
+        _id: `dynamic-card-${idx}`,
+        title: meta.title,
+        description: `Explore our premium selection of ${cat}`,
+        image: { url: meta.img },
+        link: `/search?category=${encodeURIComponent(cat)}`,
+        linkText: `Shop ${cat}`,
+        mediaType: 'image',
+        items: [
+          { label: `Premium ${cat}`, category: cat, img: subImages[0] },
+          { label: `Organic ${cat}`, category: cat, img: subImages[1] },
+          { label: `Bulk ${cat}`, category: cat, img: subImages[2] },
+          { label: `New ${cat}`, category: cat, img: subImages[3] }
+        ]
+      };
+    });
+  };
 
-  const activeOverlayCards = overlayAds.length > 0 ? overlayAds : defaultOverlayCards;
+  const activeOverlayCards = overlayAds.length > 0 ? overlayAds : generateOverlayCards();
 
   const renderOverlayCard = (card) => {
     let subItems = null;
@@ -678,67 +681,25 @@ const Home = () => {
         <div className="container">
           <h2 className="section-title" style={{ fontSize: '26px', fontWeight: '700', marginBottom: '28px', color: '#0f1111' }}>Shop by Category</h2>
           <div className="categories-grid">
-            
-            {/* SPICES */}
-            <motion.div
-              className="premium-category-card"
-              onClick={() => handleCategoryChange('Spices')}
-              whileHover={{ y: -6, scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="category-bg-image" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=400')` }}></div>
-              <div className="category-card-overlay">
-                <span className="category-card-badge">🌶️ Hot Deals</span>
-                <h3>Premium Spices</h3>
-                <span className="category-card-action">Browse Collection &rarr;</span>
-              </div>
-            </motion.div>
-
-            {/* POWDERS */}
-            <motion.div
-              className="premium-category-card"
-              onClick={() => handleCategoryChange('Powders')}
-              whileHover={{ y: -6, scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="category-bg-image" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&q=80&w=400')` }}></div>
-              <div className="category-card-overlay">
-                <span className="category-card-badge">🧂 Pure Ground</span>
-                <h3>Spice Powders</h3>
-                <span className="category-card-action">Browse Collection &rarr;</span>
-              </div>
-            </motion.div>
-
-            {/* BLENDS */}
-            <motion.div
-              className="premium-category-card"
-              onClick={() => handleCategoryChange('Blends')}
-              whileHover={{ y: -6, scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="category-bg-image" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1532336414038-cf190733eb37?auto=format&fit=crop&q=80&w=400')` }}></div>
-              <div className="category-card-overlay">
-                <span className="category-card-badge">🥘 Rich Masalas</span>
-                <h3>Gourmet Blends</h3>
-                <span className="category-card-action">Browse Collection &rarr;</span>
-              </div>
-            </motion.div>
-
-            {/* ORGANIC */}
-            <motion.div
-              className="premium-category-card"
-              onClick={() => handleCategoryChange('Organic')}
-              whileHover={{ y: -6, scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="category-bg-image" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&q=80&w=400')` }}></div>
-              <div className="category-card-overlay">
-                <span className="category-card-badge">🌿 100% Organic</span>
-                <h3>Organic Pantry</h3>
-                <span className="category-card-action">Browse Collection &rarr;</span>
-              </div>
-            </motion.div>
-
+            {(settings?.homepageCategories || ['Spices', 'Powders', 'Blends', 'Organic']).map((cat) => {
+              const details = getCategoryDetails(cat);
+              return (
+                <motion.div
+                  key={cat}
+                  className="premium-category-card"
+                  onClick={() => handleCategoryChange(cat)}
+                  whileHover={{ y: -6, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="category-bg-image" style={{ backgroundImage: `url('${details.img}')` }}></div>
+                  <div className="category-card-overlay">
+                    <span className="category-card-badge">{details.badge}</span>
+                    <h3>{details.title}</h3>
+                    <span className="category-card-action">Browse Collection &rarr;</span>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -772,7 +733,9 @@ const Home = () => {
         <div className="container">
           <div className="home-strip-head">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#111', margin: 0 }}>🔥 SBMI Smart Deals | Spices & Pantry</h2>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#111', margin: 0 }}>
+                {settings?.homepageDealsHeader || '🔥 SBMI Smart Deals | Spices & Pantry'}
+              </h2>
               <span style={{ fontSize: '13px', color: '#c7511f', fontWeight: '600' }}>AI-calibrated loss-proof discounts based on stock levels, seller ratings, and trust reviews</span>
             </div>
             <Link to="/deals" style={{ color: '#007185', fontWeight: '600', textDecoration: 'none', fontSize: '14px' }}>See all deals</Link>

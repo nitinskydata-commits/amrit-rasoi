@@ -535,13 +535,13 @@ exports.updateProduct = async (req, res) => {
       
       // Map files to variants
       req.body.variants.forEach((variant, index) => {
-        if (variantImages[index]) {
-          variant.images = variantImages[index];
-          console.log(`Mapped ${variant.images.length} uploaded images to variant ${index}`);
-        }
+        const existing = variant.images || [];
+        const uploaded = variantImages[index] || [];
+        variant.images = [...existing, ...uploaded];
+        console.log(`Mapped ${uploaded.length} new uploaded images to variant ${index}, existing: ${existing.length}`);
         
         // Fallback to imageIndices
-        if ((!variant.images || variant.images.length === 0) && variant.imageIndices && Array.isArray(variant.imageIndices)) {
+        if (uploaded.length === 0 && (!existing || existing.length === 0) && variant.imageIndices && Array.isArray(variant.imageIndices)) {
           const imagesToUse = req.body.images || product.images;
           if (imagesToUse) {
             variant.images = variant.imageIndices
@@ -597,8 +597,8 @@ exports.updateProduct = async (req, res) => {
     if (Array.isArray(req.body.variants)) {
       // For each variant, if images missing, fallback to existing product's variant images
       req.body.variants = req.body.variants.map((v, idx) => {
-        if (!v.images || v.images.length === 0) {
-          const existingVar = product.variants && product.variants[idx];
+        if (v.images === undefined) {
+          const existingVar = product.variants?.find(ev => ev._id?.toString() === v._id?.toString()) || (product.variants && product.variants[idx]);
           if (existingVar && existingVar.images) v.images = existingVar.images;
         }
         return v;

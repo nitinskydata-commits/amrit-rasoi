@@ -30,7 +30,9 @@ const Wishlist = () => {
 
   const handleAddToCart = async (product) => {
     try {
-      const variant = product.variants?.[0]?.weight || '';
+      const variant = (product.variants?.[0]?.attributes && product.variants[0].attributes.length > 0)
+        ? product.variants[0].attributes.map(a => a.value).join(' / ')
+        : (product.variants?.[0]?.weight || '');
       await dispatch(addToCart({
         productId: product._id,
         quantity: 1,

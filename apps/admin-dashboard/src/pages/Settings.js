@@ -35,7 +35,10 @@ const Settings = () => {
     instagram: '',
     twitter: '',
     youtube: '',
-    linkedin: ''
+    linkedin: '',
+    homepageDealsHeader: '',
+    homepageRecommendationMode: 'personalized',
+    homepageCategories: ''
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -64,7 +67,10 @@ const Settings = () => {
           instagram: s.socialLinks?.instagram || '',
           twitter: s.socialLinks?.twitter || '',
           youtube: s.socialLinks?.youtube || '',
-          linkedin: s.socialLinks?.linkedin || ''
+          linkedin: s.socialLinks?.linkedin || '',
+          homepageDealsHeader: s.homepageDealsHeader || '🔥 SBMI Smart Deals | Spices & Pantry',
+          homepageRecommendationMode: s.homepageRecommendationMode || 'personalized',
+          homepageCategories: Array.isArray(s.homepageCategories) ? s.homepageCategories.join(', ') : s.homepageCategories || 'Spices, Powders, Blends, Organic'
         });
         
         if (s.companyLogo?.url) setLogoPreview(s.companyLogo.url);
@@ -155,6 +161,7 @@ const Settings = () => {
         <button className={`tab-btn ${activeTab === 'contact' ? 'active' : ''}`} onClick={() => setActiveTab('contact')}><FaPhone /> Contact & Social</button>
         <button className={`tab-btn ${activeTab === 'seo' ? 'active' : ''}`} onClick={() => setActiveTab('seo')}><FaGlobe /> SEO & Analytics</button>
         <button className={`tab-btn ${activeTab === 'legal' ? 'active' : ''}`} onClick={() => setActiveTab('legal')}><FaShieldAlt /> Policies</button>
+        <button className={`tab-btn ${activeTab === 'homepage' ? 'active' : ''}`} onClick={() => setActiveTab('homepage')}><FaGlobe /> Homepage</button>
         <button className={`tab-btn ${activeTab === 'security' ? 'active' : ''}`} onClick={() => setActiveTab('security')}><FaLock /> Security</button>
       </div>
 
@@ -278,6 +285,46 @@ const Settings = () => {
             <div className="grid-2">
               <div className="form-group"><label>GST Number</label><input type="text" className="form-control" value={formData.gstNumber} onChange={(e) => setFormData({...formData, gstNumber: e.target.value})} /></div>
               <div className="form-group"><label>FSSAI Number</label><input type="text" className="form-control" value={formData.fssaiNumber} onChange={(e) => setFormData({...formData, fssaiNumber: e.target.value})} /></div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'homepage' && (
+          <div className="settings-card">
+            <h2>Homepage Customization</h2>
+            <div className="form-group">
+              <label>Deals Section Header Text</label>
+              <input 
+                type="text" 
+                className="form-control" 
+                value={formData.homepageDealsHeader} 
+                onChange={(e) => setFormData({...formData, homepageDealsHeader: e.target.value})} 
+                placeholder="e.g. 🔥 SBMI Smart Deals | Spices & Pantry"
+              />
+            </div>
+            <div className="form-group">
+              <label>Recommendations Display Mode</label>
+              <select 
+                className="form-control" 
+                value={formData.homepageRecommendationMode} 
+                onChange={(e) => setFormData({...formData, homepageRecommendationMode: e.target.value})}
+              >
+                <option value="personalized">Personalized Feed (Recommended for You)</option>
+                <option value="latest">Latest Products First</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Shop by Category (Comma separated)</label>
+              <input 
+                type="text" 
+                className="form-control" 
+                value={formData.homepageCategories} 
+                onChange={(e) => setFormData({...formData, homepageCategories: e.target.value})} 
+                placeholder="e.g. Spices, Powders, Blends, Organic"
+              />
+              <small style={{ color: '#64748b', marginTop: '4px', display: 'block' }}>
+                Enter the exact category names to show as cards in the "Shop by Category" strip.
+              </small>
             </div>
           </div>
         )}

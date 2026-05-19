@@ -89,16 +89,8 @@ const Footer = () => {
               )}
               <span>{settings?.siteName || 'Amrit Rasoi'}</span>
             </div>
-
-            <div className="footer-badges">
-              <div className="footer-badge">
-                <FaGlobe className="badge-icon-small" />
-                <span>English</span>
-              </div>
-              <div className="footer-badge">
-                <span>🇮🇳 India</span>
-              </div>
-            </div>
+            
+            {/* Badges removed as per user request to clean up non-working UI */}
           </div>
         </div>
       </div>
@@ -107,9 +99,9 @@ const Footer = () => {
       <div className="footer-bottom">
         <div className="container">
           <div className="footer-legal-links">
-            <Link to="/privacy">Conditions of Use</Link>
+            <Link to="/terms">Conditions of Use</Link>
             <Link to="/privacy">Privacy Notice</Link>
-            <Link to="/privacy">Interest-Based Ads</Link>
+            <Link to="/shipping">Shipping & Returns</Link>
           </div>
           <p className="copyright-text">
             © 2011-{new Date().getFullYear()}, {settings?.siteName || 'Amrit Rasoi, Inc.'} or its affiliates. Registered GST: {settings?.gstNumber || 'XXXXXXXXXX'}, FSSAI: {settings?.fssaiNumber || 'XXXXXXXXXX'}

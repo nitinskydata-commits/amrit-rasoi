@@ -5,7 +5,7 @@ const path = require('path');
 
 // File filter (optional redundancy, as CloudinaryStorage also handles formats)
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp|svg|ico/;
+  const allowedTypes = /jpeg|jpg|png|gif|webp|svg|ico|mp4|webm|mov|avi|mkv|3gp/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
 
@@ -15,7 +15,7 @@ const fileFilter = (req, file, cb) => {
     return cb(null, true);
   } else {
     console.error(`❌ Upload Rejected: Mime: ${mimetype}, Ext: ${extname}`);
-    cb(new Error('Only image files are allowed!'), false);
+    cb(new Error('Only image or video files are allowed!'), false);
   }
 };
 

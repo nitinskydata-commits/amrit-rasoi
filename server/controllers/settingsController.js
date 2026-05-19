@@ -87,7 +87,8 @@ exports.updateSettings = async (req, res) => {
       'codEnabled', 'onlinePaymentsEnabled', 'codMinOrder', 'codMaxOrder', 'codExtraFee',
       'refundPolicyText', 'shippingPolicyText', 'privacyPolicyText', 'termsAndConditionsText',
       'gstNumber', 'fssaiNumber', 'metaTitle', 'metaDescription', 'metaKeywords',
-      'googleAnalyticsId', 'footerText', 'maintenanceMode'
+      'googleAnalyticsId', 'footerText', 'maintenanceMode',
+      'homepageDealsHeader', 'homepageRecommendationMode'
     ];
 
     fieldsToUpdate.forEach(field => {
@@ -108,6 +109,18 @@ exports.updateSettings = async (req, res) => {
         console.log(`🔹 [UPDATE] Field: ${field} | Raw: ${req.body[field]} | Parsed: ${settings[field]}`);
       }
     });
+
+    // Parse homepage categories if present
+    if (req.body.homepageCategories !== undefined) {
+      const val = req.body.homepageCategories;
+      if (typeof val === 'string') {
+        settings.homepageCategories = val.split(',').map(s => s.trim()).filter(Boolean);
+      } else if (Array.isArray(val)) {
+        settings.homepageCategories = val;
+      }
+      settings.markModified('homepageCategories');
+      console.log('🔹 Homepage categories updated:', settings.homepageCategories);
+    }
 
     // Update social links (grouped)
     if (!settings.socialLinks) settings.socialLinks = {};

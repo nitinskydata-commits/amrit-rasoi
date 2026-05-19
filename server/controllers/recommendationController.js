@@ -126,17 +126,17 @@ exports.getPersonalizedFeed = async (req, res) => {
         _id: { $nin: Array.from(excludeProductIds) },
         isActive: true
       })
-        .sort({ ratings: -1 })
+        .sort({ createdAt: -1 })
         .limit(8);
     }
 
-    // Fallback: If recommended list is empty, return general top-rated/best seller items
-    if (recommendedProducts.length < 4) {
+    // Fallback: If recommended list is empty, return general newest items first
+    if (recommendedProducts.length < 8) {
       const topProducts = await Product.find({
         _id: { $nin: Array.from(excludeProductIds) },
         isActive: true
       })
-        .sort({ ratings: -1, numOfReviews: -1 })
+        .sort({ createdAt: -1 })
         .limit(8 - recommendedProducts.length);
 
       recommendedProducts = [...recommendedProducts, ...topProducts];
