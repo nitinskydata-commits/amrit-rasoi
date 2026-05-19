@@ -1,34 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Package, Box, Tags, Image as ImageIcon, 
+  Settings, ArrowLeft, UploadCloud, Plus, X, 
+  Percent, ShieldCheck, Activity
+} from 'lucide-react';
 import { API_BASE_URL } from '../../config/api';
 import './AddProduct.css';
 
 const AddProduct = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  
+  const fileInputRef = useRef(null);
+
+  // Form State
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     category: 'Spices',
     brand: 'Amrit Rasoi',
-    price: '',
-    mrp: '',
-    stock: '',
     isFeatured: false,
     inTodaysDeal: false,
     inNewArrivals: false
   });
 
+  // Variant State (Advanced Architecture)
   const [variants, setVariants] = useState([
-    { attributeName: 'Weight', attributeValue: '100g', price: '', mrp: '', stock: '', sku: '', barcode: '', files: [] }
+    { 
+      id: crypto.randomUUID(),
+      attributeName: 'Weight', 
+      attributeValue: '500g', 
+      price: '', 
+      mrp: '', 
+      stock: '', 
+      sku: '', 
+      barcode: '', 
+      files: [] 
+    }
   ]);
 
+  // Marketing & Discount Engine State
+  const [discountRules, setDiscountRules] = useState([]);
+
+  // Global Media
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
 
-  // Handle form input changes
+  // Handlers
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -37,60 +57,84 @@ const AddProduct = () => {
     }));
   };
 
-  // Handle variant changes
-  const handleVariantChange = (index, field, value) => {
-    const updatedVariants = [...variants];
-    updatedVariants[index][field] = value;
-    setVariants(updatedVariants);
+  const handleVariantChange = (id, field, value) => {
+    setVariants(variants.map(v => v.id === id ? { ...v, [field]: value } : v));
   };
 
-  // Add new variant
   const addVariant = () => {
-    setVariants([...variants, { attributeName: 'Weight', attributeValue: '', price: '', mrp: '', stock: '', sku: '', barcode: '', files: [] }]);
+    setVariants([...variants, { 
+      id: crypto.randomUUID(), 
+      attributeName: 'Weight', 
+      attributeValue: '', 
+      price: '', 
+      mrp: '', 
+      stock: '', 
+      sku: '', 
+      barcode: '', 
+      files: [] 
+    }]);
   };
 
-  const handleVariantFileChange = (index, e) => {
-    const files = Array.from(e.target.files);
-    const updatedVariants = [...variants];
-    updatedVariants[index].files = files;
-    setVariants(updatedVariants);
-  };
-
-  // Remove variant
-  const removeVariant = (index) => {
+  const removeVariant = (id) => {
     if (variants.length > 1) {
-      setVariants(variants.filter((_, i) => i !== index));
+      setVariants(variants.filter(v => v.id !== id));
     }
   };
 
-  // Handle image selection
-  const handleImageChange = (e) => {
+  const handleVariantFileChange = (id, e) => {
     const files = Array.from(e.target.files);
-    setImages(files);
-
-    // Create previews
-    const previews = files.map(file => URL.createObjectURL(file));
-    setImagePreviews(previews);
+    setVariants(variants.map(v => v.id === id ? { ...v, files } : v));
   };
 
-  // Handle form submission
+  const handleGlobalImageDrop = (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer?.files || e.target.files);
+    setImages(prev => [...prev, ...files]);
+    
+    const previews = files.map(file => URL.createObjectURL(file));
+    setImagePreviews(prev => [...prev, ...previews]);
+  };
+
+  const removeGlobalImage = (index) => {
+    setImages(images.filter((_, i) => i !== index));
+    setImagePreviews(imagePreviews.filter((_, i) => i !== index));
+  };
+
+  // Marketing Rules
+  const addDiscountRule = () => {
+    setDiscountRules([...discountRules, {
+      id: crypto.randomUUID(),
+      type: 'PERCENTAGE', // PERCENTAGE, FIXED, BOGO
+      value: '',
+      minQuantity: 2,
+      isActive: true
+    }]);
+  };
+
+  const removeDiscountRule = (id) => {
+    setDiscountRules(discountRules.filter(r => r.id !== id));
+  };
+
+  const updateDiscountRule = (id, field, value) => {
+    setDiscountRules(discountRules.map(r => r.id === id ? { ...r, [field]: value } : r));
+  };
+
+  // Submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       const token = localStorage.getItem('adminToken');
-      
       const formDataToSend = new FormData();
       
-      // Append all form fields
       Object.keys(formData).forEach(key => {
         formDataToSend.append(key, formData[key]);
       });
 
-      // Map frontend variant format to backend schema
+      // Mapping variants to backend schema
       const mappedVariants = variants.map(v => ({
-        attributes: [{ name: v.attributeName || 'Weight', value: v.attributeValue || v.weight }],
+        attributes: [{ name: v.attributeName || 'Variant', value: v.attributeValue || '' }],
         price: v.price,
         mrp: v.mrp,
         stock: v.stock,
@@ -98,10 +142,17 @@ const AddProduct = () => {
         barcode: v.barcode
       }));
 
-      // Append variants as JSON string
       formDataToSend.append('variants', JSON.stringify(mappedVariants));
+      
+      // Append discount rules
+      formDataToSend.append('discountRules', JSON.stringify(discountRules.filter(r => r.isActive)));
 
-      // Append variant images/videos
+      // Append global images
+      images.forEach(image => {
+        formDataToSend.append('images', image);
+      });
+
+      // Append variant specific media
       variants.forEach((variant, index) => {
         if (variant.files && variant.files.length > 0) {
           variant.files.forEach(file => {
@@ -110,22 +161,10 @@ const AddProduct = () => {
         }
       });
 
-      // Append images
-      images.forEach(image => {
-        formDataToSend.append('images', image);
-      });
-
-      const config = {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        }
-      };
-
       const { data } = await axios.post(
         `${API_BASE_URL}/admin/product/new`,
         formDataToSend,
-        config
+        { headers: { 'Content-Type': 'multipart/form-data', 'Authorization': `Bearer ${token}` } }
       );
 
       if (data.success) {
@@ -143,307 +182,243 @@ const AddProduct = () => {
   return (
     <div className="add-product-page">
       <div className="page-header">
-        <h1>Add New Product</h1>
+        <div>
+          <h1>Premium Editor Mode</h1>
+          <p style={{ color: '#8b949e', marginTop: '4px', fontSize: '14px' }}>Expert product data entry & variant management.</p>
+        </div>
         <button className="btn-back" onClick={() => navigate('/products')}>
-          ← Back to Products
+          <ArrowLeft size={16} /> Back to Catalog
         </button>
       </div>
 
       <form className="product-form" onSubmit={handleSubmit}>
-        {/* Basic Information */}
-        <div className="form-section">
-          <h2>Basic Information</h2>
+        <div className="form-main">
           
-          <div className="form-group">
-            <label>Product Name *</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              placeholder="e.g., Red Chilli Powder"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows="4"
-              placeholder="Product description..."
-            />
-          </div>
-
-          <div className="form-row">
+          {/* BASIC INFO */}
+          <motion.div className="form-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <h2><Package size={18} /> Basic Information</h2>
+            
             <div className="form-group">
-              <label>Category *</label>
-              <select name="category" value={formData.category} onChange={handleChange} required>
-                <option value="Spices">Spices</option>
-                <option value="Powders">Powders</option>
-                <option value="Blends">Blends</option>
-                <option value="Organic">Organic</option>
-                <option value="Masalas">Masalas</option>
-                <option value="Seeds">Seeds</option>
-                <option value="Herbs">Herbs</option>
-              </select>
+              <label>Product Title *</label>
+              <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="e.g., Premium Saffron Threads" />
             </div>
 
             <div className="form-group">
-              <label>Brand</label>
-              <input
-                type="text"
-                name="brand"
-                value={formData.brand}
-                onChange={handleChange}
-                placeholder="Brand name"
-              />
+              <label>Description</label>
+              <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Engaging product description..." />
             </div>
-          </div>
 
-          <div className="form-group checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                name="isFeatured"
-                checked={formData.isFeatured}
-                onChange={handleChange}
-              />
-              <span>Feature on homepage (featured sort)</span>
-            </label>
-          </div>
-          <div className="form-group checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                name="inTodaysDeal"
-                checked={formData.inTodaysDeal}
-                onChange={handleChange}
-              />
-              <span>Today&apos;s Deal (home strip + /deals page)</span>
-            </label>
-          </div>
-          <div className="form-group checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                name="inNewArrivals"
-                checked={formData.inNewArrivals}
-                onChange={handleChange}
-              />
-              <span>New Arrivals (home strip + /new-arrivals page)</span>
-            </label>
-          </div>
-        </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Category *</label>
+                <select name="category" value={formData.category} onChange={handleChange} required>
+                  <option value="Spices">Spices</option>
+                  <option value="Powders">Powders</option>
+                  <option value="Blends">Blends</option>
+                  <option value="Organic">Organic</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Brand</label>
+                <input type="text" name="brand" value={formData.brand} onChange={handleChange} placeholder="Brand Name" />
+              </div>
+            </div>
+          </motion.div>
 
-        {/* Weight Variants */}
-        <div className="form-section">
-          <div className="section-header">
-            <h2>Universal Variants & Pricing</h2>
-            <button type="button" className="btn-add-variant" onClick={addVariant}>
-              + Add Variant
-            </button>
-          </div>
+          {/* ADVANCED VARIANTS */}
+          <motion.div className="form-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #30363d', paddingBottom: '12px', marginBottom: '20px' }}>
+              <h2 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0 }}><Box size={18} /> Advanced Variants</h2>
+              <button type="button" className="btn-add-variant" style={{ width: 'auto', padding: '6px 12px' }} onClick={addVariant}>
+                <Plus size={16} /> Add Variant
+              </button>
+            </div>
 
-          {variants.map((variant, index) => (
-            <div key={index} className="variant-card">
-              <div className="variant-header">
-                <h3>Variant {index + 1}</h3>
-                {variants.length > 1 && (
-                  <button
-                    type="button"
-                    className="btn-remove-variant"
-                    onClick={() => removeVariant(index)}
+            <AnimatePresence>
+              {variants.map((variant, index) => {
+                const savings = (variant.mrp && variant.price && variant.mrp > variant.price) 
+                  ? Math.round(((variant.mrp - variant.price) / variant.mrp) * 100) 
+                  : 0;
+
+                return (
+                  <motion.div 
+                    key={variant.id} 
+                    className="variant-card"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
                   >
-                    × Remove
-                  </button>
-                )}
-              </div>
+                    <div className="variant-header">
+                      <h3>Variant {index + 1}</h3>
+                      {variants.length > 1 && (
+                        <button type="button" className="btn-remove-variant" onClick={() => removeVariant(variant.id)}>
+                          Remove
+                        </button>
+                      )}
+                    </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Attribute Name *</label>
-                  <input
-                    type="text"
-                    value={variant.attributeName || 'Weight'}
-                    onChange={(e) => handleVariantChange(index, 'attributeName', e.target.value)}
-                    required
-                    placeholder="e.g., Weight, Size, Color"
-                  />
-                </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Attribute (e.g. Size)</label>
+                        <input type="text" value={variant.attributeName} onChange={e => handleVariantChange(variant.id, 'attributeName', e.target.value)} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Value (e.g. 500g)</label>
+                        <input type="text" value={variant.attributeValue} onChange={e => handleVariantChange(variant.id, 'attributeValue', e.target.value)} required />
+                      </div>
+                      <div className="form-group">
+                        <label>SKU (Stock Keeping Unit)</label>
+                        <input type="text" value={variant.sku} onChange={e => handleVariantChange(variant.id, 'sku', e.target.value)} placeholder="XYZ-123" />
+                      </div>
+                      <div className="form-group">
+                        <label>Barcode (UPC/EAN)</label>
+                        <input type="text" value={variant.barcode} onChange={e => handleVariantChange(variant.id, 'barcode', e.target.value)} placeholder="00000000" />
+                      </div>
+                    </div>
 
-                <div className="form-group">
-                  <label>Attribute Value *</label>
-                  <input
-                    type="text"
-                    value={variant.attributeValue || variant.weight || ''}
-                    onChange={(e) => handleVariantChange(index, 'attributeValue', e.target.value)}
-                    required
-                    placeholder="e.g., 500g, XL, Red"
-                  />
-                </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Regular Price (MRP) ₹</label>
+                        <input type="number" value={variant.mrp} onChange={e => handleVariantChange(variant.id, 'mrp', e.target.value)} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Sale Price ₹</label>
+                        <input type="number" value={variant.price} onChange={e => handleVariantChange(variant.id, 'price', e.target.value)} required />
+                        {savings > 0 ? (
+                          <div className="savings-indicator">✓ {savings}% Savings calculated</div>
+                        ) : (variant.price > variant.mrp && (
+                          <div className="error-indicator">Sale price exceeds MRP!</div>
+                        ))}
+                      </div>
+                      <div className="form-group">
+                        <label>Stock Qty</label>
+                        <input type="number" value={variant.stock} onChange={e => handleVariantChange(variant.id, 'stock', e.target.value)} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Variant Media</label>
+                        <input type="file" multiple accept="image/*,video/*" onChange={e => handleVariantFileChange(variant.id, e)} style={{ padding: '6px' }} />
+                        {variant.files?.length > 0 && <span style={{ fontSize: '11px', color: '#58a6ff', display: 'block', marginTop: '4px' }}>{variant.files.length} file(s) attached</span>}
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
+          </motion.div>
 
-                <div className="form-group">
-                  <label>SKU</label>
-                  <input
-                    type="text"
-                    value={variant.sku || ''}
-                    onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
-                    placeholder="Variant SKU"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Barcode</label>
-                  <input
-                    type="text"
-                    value={variant.barcode || ''}
-                    onChange={(e) => handleVariantChange(index, 'barcode', e.target.value)}
-                    placeholder="UPC / EAN"
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Selling Price (₹) *</label>
-                  <input
-                    type="number"
-                    value={variant.price}
-                    onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
-                    required
-                    placeholder="120"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>MRP (₹) *</label>
-                  <input
-                    type="number"
-                    value={variant.mrp}
-                    onChange={(e) => handleVariantChange(index, 'mrp', e.target.value)}
-                    required
-                    placeholder="150"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Stock *</label>
-                  <input
-                    type="number"
-                    value={variant.stock}
-                    onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
-                    required
-                    placeholder="60"
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label>Variant Images/Videos</label>
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*,video/*"
-                    onChange={(e) => handleVariantFileChange(index, e)}
-                  />
-                  {variant.files && variant.files.length > 0 && (
-                    <span style={{ fontSize: '11px', color: '#007185' }}>{variant.files.length} file(s) selected</span>
-                  )}
-                </div>
-              </div>
-
-              {variant.price && variant.mrp && (
-                <div className="discount-preview">
-                  Discount: {Math.round(((variant.mrp - variant.price) / variant.mrp) * 100)}% off
-                  (Save ₹{variant.mrp - variant.price})
-                </div>
-              )}
-            </div>
-          ))}
         </div>
 
-        {/* Default Pricing (for backward compatibility) */}
-        <div className="form-section">
-          <h2>Default Pricing (Base Price)</h2>
-          <p className="help-text">
-            These will be used as fallback if no variant is selected
-          </p>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label>Base Selling Price (₹) *</label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                required
-                placeholder="120"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Base MRP (₹) *</label>
-              <input
-                type="number"
-                name="mrp"
-                value={formData.mrp}
-                onChange={handleChange}
-                required
-                placeholder="150"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Base Stock *</label>
-              <input
-                type="number"
-                name="stock"
-                value={formData.stock}
-                onChange={handleChange}
-                required
-                placeholder="60"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Product Images */}
-        <div className="form-section">
-          <h2>Product Images</h2>
+        <div className="form-sidebar">
           
-          <div className="form-group">
-            <label>Upload Images (Max 5)</label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleImageChange}
-              max="5"
-            />
-            <p className="help-text">Recommended: 800x800px, JPG or PNG</p>
-          </div>
+          {/* MEDIA HANDLING */}
+          <motion.div className="form-section" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+            <h2><ImageIcon size={18} /> Global Media</h2>
+            
+            <div 
+              className="file-upload-zone"
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={e => e.preventDefault()}
+              onDrop={handleGlobalImageDrop}
+            >
+              <UploadCloud size={32} style={{ marginBottom: '12px', color: '#58a6ff' }} />
+              <p>Drag & drop images here or <strong>browse</strong></p>
+              <input type="file" ref={fileInputRef} className="file-upload-input" multiple accept="image/*" onChange={handleGlobalImageDrop} />
+            </div>
 
-          {imagePreviews.length > 0 && (
             <div className="image-previews">
-              {imagePreviews.map((preview, index) => (
-                <div key={index} className="preview-item">
-                  <img src={preview} alt={`Preview ${index + 1}`} />
+              {imagePreviews.map((src, idx) => (
+                <div key={idx} className="preview-item">
+                  <img src={src} alt="Preview" />
+                  <button type="button" className="btn-remove-image" onClick={() => removeGlobalImage(idx)}>
+                    <X size={12} />
+                  </button>
                 </div>
               ))}
             </div>
-          )}
-        </div>
+          </motion.div>
 
-        {/* Submit Buttons */}
-        <div className="form-actions">
+          {/* DYNAMIC DISCOUNT ENGINE */}
+          <motion.div className="form-section" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+            <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #30363d', paddingBottom: '12px', marginBottom: '16px' }}>
+              <h2 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0 }}><Percent size={18} /> Marketing Rules</h2>
+              <button type="button" onClick={addDiscountRule} style={{ background: 'none', color: '#bc8cff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px' }}>
+                <Plus size={14} /> Add Rule
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {discountRules.map((rule) => (
+                <motion.div 
+                  key={rule.id} className="discount-rule-card"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input type="checkbox" checked={rule.isActive} onChange={e => updateDiscountRule(rule.id, 'isActive', e.target.checked)} />
+                      <span style={{ fontSize: '13px', fontWeight: 500, color: rule.isActive ? '#c9d1d9' : '#8b949e' }}>Active Rule</span>
+                    </div>
+                    <button type="button" onClick={() => removeDiscountRule(rule.id)} style={{ background: 'none', border: 'none', color: '#ff7b72', cursor: 'pointer' }}>
+                      <X size={14} />
+                    </button>
+                  </div>
+                  
+                  <div className="form-group" style={{ marginBottom: '12px' }}>
+                    <label>Discount Type</label>
+                    <select value={rule.type} onChange={e => updateDiscountRule(rule.id, 'type', e.target.value)} style={{ padding: '6px 8px' }}>
+                      <option value="PERCENTAGE">Percentage Off (%)</option>
+                      <option value="FIXED">Fixed Amount Off (₹)</option>
+                      <option value="BOGO">Buy X Get Y</option>
+                    </select>
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>Value</label>
+                      <input type="number" value={rule.value} onChange={e => updateDiscountRule(rule.id, 'value', e.target.value)} placeholder="e.g. 10" style={{ padding: '6px 8px' }} />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>Min Qty Threshold</label>
+                      <input type="number" value={rule.minQuantity} onChange={e => updateDiscountRule(rule.id, 'minQuantity', e.target.value)} style={{ padding: '6px 8px' }} />
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+              {discountRules.length === 0 && (
+                <p style={{ fontSize: '13px', color: '#8b949e', fontStyle: 'italic' }}>No active marketing rules applied.</p>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          {/* PLACEMENT & STATUS */}
+          <motion.div className="form-section" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+            <h2><Activity size={18} /> Visibility & Status</h2>
+            <div className="checkbox-group">
+              <input type="checkbox" name="isFeatured" checked={formData.isFeatured} onChange={handleChange} />
+              <span>Feature on Homepage (Top Placement)</span>
+            </div>
+            <div className="checkbox-group">
+              <input type="checkbox" name="inTodaysDeal" checked={formData.inTodaysDeal} onChange={handleChange} />
+              <span>Show in "Today's Deals" Strip</span>
+            </div>
+            <div className="checkbox-group">
+              <input type="checkbox" name="inNewArrivals" checked={formData.inNewArrivals} onChange={handleChange} />
+              <span>Show in "New Arrivals" Strip</span>
+            </div>
+          </motion.div>
+
+        </div>
+        
+        {/* SUBMIT */}
+        <div style={{ gridColumn: '1 / -1' }} className="form-actions">
+          <button type="button" className="btn-cancel" onClick={() => navigate('/products')}>Cancel</button>
           <button type="submit" className="btn-submit" disabled={loading}>
-            {loading ? 'Creating Product...' : 'Create Product'}
-          </button>
-          <button type="button" className="btn-cancel" onClick={() => navigate('/products')}>
-            Cancel
+            {loading ? 'Processing...' : (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldCheck size={16} /> Publish Premium Product
+              </span>
+            )}
           </button>
         </div>
       </form>
