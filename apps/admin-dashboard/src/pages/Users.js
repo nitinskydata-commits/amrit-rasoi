@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getAllUsers, deleteUser, secureRoleUpdate } from '../utils/api';
-import { FaTrash, FaUserShield, FaShieldAlt, FaTimes } from 'react-icons/fa';
+import { getAllUsers, deleteUser, secureRoleUpdate, updateWholesaleStatus } from '../utils/api';
+import { FaTrash, FaUserShield, FaShieldAlt, FaTimes, FaBuilding } from 'react-icons/fa';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -75,7 +75,8 @@ const Users = () => {
   };
 
   // Roles partition mapping
-  const customersList = users.filter(u => !u.role || u.role === 'user' || u.role === 'customer');
+  const customersList = users.filter(u => (!u.role || u.role === 'user' || u.role === 'customer') && (!u.sellerStatus || u.sellerStatus === 'none') && u.wholesaleStatus !== 'pending' && !u.isWholesale);
+  const wholesaleList = users.filter(u => u.role === 'wholesale_buyer' || u.isWholesale || u.wholesaleStatus === 'pending');
   const boardList = users.filter(u => ['board_member', 'director', 'executive_board'].includes(u.role));
   const hrList = users.filter(u => ['hr', 'hr_manager', 'recruiter', 'hr_staff'].includes(u.role));
   const managersList = users.filter(u => ['regional_manager', 'inventory_manager', 'order_manager', 'marketing_manager', 'warehouse_manager', 'manager'].includes(u.role));
@@ -83,9 +84,22 @@ const Users = () => {
   const partnersList = users.filter(u => ['vendor_owner', 'partner_admin', 'seller', 'collaborator'].includes(u.role));
   const adminsList = users.filter(u => ['admin', 'platform_admin'].includes(u.role));
 
+  const handleWholesaleStatusUpdate = async (userId, status) => {
+    if (window.confirm(`Are you sure you want to mark this Wholesale buyer as ${status}?`)) {
+      try {
+        await updateWholesaleStatus(userId, { status });
+        alert(`Wholesale Buyer application updated to: ${status}!`);
+        fetchUsers();
+      } catch (error) {
+        alert(error.response?.data?.message || 'Error updating status');
+      }
+    }
+  };
+
   const getFilteredUsers = () => {
     switch (activeSubTab) {
       case 'customers': return customersList;
+      case 'wholesale': return wholesaleList;
       case 'board_members': return boardList;
       case 'hr_management': return hrList;
       case 'managers': return managersList;
@@ -100,6 +114,8 @@ const Users = () => {
     switch (activeSubTab) {
       case 'customers': 
         return { title: 'Customers Directory', desc: 'Manage registered store customers and buyers.' };
+      case 'wholesale':
+        return { title: 'B2B Wholesale Directory', desc: 'Verify, approve, and audit corporate wholesale buyers.' };
       case 'board_members': 
         return { title: 'Board Members', desc: 'SBMI Executive Board and Directors.' };
       case 'hr_management': 
@@ -138,50 +154,132 @@ const Users = () => {
         <div className="table-container">
           <table>
             <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Role</th>
-                <th>Joined</th>
-                <th>Actions</th>
-              </tr>
+              {activeSubTab === 'wholesale' ? (
+                <tr>
+                  <th>Company / Firm</th>
+                  <th>Contact Info</th>
+                  <th>GSTIN / License</th>
+                  <th>Address</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              ) : (
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Role</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              )}
             </thead>
             <tbody>
               {filteredUsers.map((user) => (
                 <tr key={user._id}>
-                  <td><strong>{user.name}</strong></td>
-                  <td>{user.email}</td>
-                  <td>{user.phone || 'N/A'}</td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span className={`badge ${
-                        user.role === 'admin' || user.role === 'platform_admin' ? 'badge-danger' : 
-                        ['vendor_owner', 'partner_admin'].includes(user.role) ? 'badge-warning' : 'badge-info'
-                      }`}>
-                        {user.role || 'customer'}
-                      </span>
-                      {currentAdmin?.isSuperAdmin && (
+                  {activeSubTab === 'wholesale' ? (
+                    <>
+                      <td>
+                        <strong>{user.wholesaleProfile?.companyName || 'N/A'}</strong>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Owner: {user.name}</div>
+                      </td>
+                      <td>
+                        <div>{user.email}</div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{user.phone || 'N/A'}</div>
+                      </td>
+                      <td>
+                        <div>GSTIN: <code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', fontStyle: 'normal' }}>{user.wholesaleProfile?.gstin || 'N/A'}</code></div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>License: {user.wholesaleProfile?.tradeLicense || 'N/A'}</div>
+                      </td>
+                      <td>
+                        <div style={{ maxWidth: '200px', fontSize: '12px', whiteSpace: 'normal', color: '#475569', lineHeight: '1.4' }}>
+                          {user.wholesaleProfile?.businessAddress || 'N/A'}
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`badge ${
+                          user.wholesaleStatus === 'approved' ? 'badge-success' : 
+                          user.wholesaleStatus === 'pending' ? 'badge-warning' : 'badge-danger'
+                        }`}>
+                          {user.wholesaleStatus || 'none'}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          {user.wholesaleStatus === 'pending' && (
+                            <>
+                              <button 
+                                className="btn btn-sm btn-success"
+                                onClick={() => handleWholesaleStatusUpdate(user._id, 'approved')}
+                                style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', fontWeight: '600', cursor: 'pointer' }}
+                              >
+                                Approve
+                              </button>
+                              <button 
+                                className="btn btn-sm btn-danger"
+                                onClick={() => handleWholesaleStatusUpdate(user._id, 'rejected')}
+                                style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', fontWeight: '600', cursor: 'pointer' }}
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          {user.wholesaleStatus === 'approved' && (
+                            <button 
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => handleWholesaleStatusUpdate(user._id, 'rejected')}
+                              style={{ border: '1px solid #ef4444', background: 'none', color: '#ef4444', padding: '6px 12px', borderRadius: '4px', fontWeight: '600', cursor: 'pointer' }}
+                            >
+                              Revoke
+                            </button>
+                          )}
+                          <button 
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleDelete(user)}
+                            style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td><strong>{user.name}</strong></td>
+                      <td>{user.email}</td>
+                      <td>{user.phone || 'N/A'}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span className={`badge ${
+                            user.role === 'admin' || user.role === 'platform_admin' ? 'badge-danger' : 
+                            ['vendor_owner', 'partner_admin'].includes(user.role) ? 'badge-warning' : 'badge-info'
+                          }`}>
+                            {user.role || 'customer'}
+                          </span>
+                          {currentAdmin?.isSuperAdmin && (
+                            <button 
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => openSecureModal(user)}
+                              title="Secure Role Management"
+                              style={{ padding: '2px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <FaShieldAlt /> Adjust Role
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                      <td>
                         <button 
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => openSecureModal(user)}
-                          title="Secure Role Management"
-                          style={{ padding: '2px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleDelete(user)}
+                          style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         >
-                          <FaShieldAlt /> Adjust Role
+                          <FaTrash />
                         </button>
-                      )}
-                    </div>
-                  </td>
-                  <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-                  <td>
-                    <button 
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleDelete(user)}
-                    >
-                      <FaTrash />
-                    </button>
-                  </td>
+                      </td>
+                    </>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -262,6 +360,7 @@ const Users = () => {
                   required
                 >
                   <option value="user">User (Customer)</option>
+                  <option value="wholesale_buyer">Wholesale Buyer (B2B)</option>
                   <option value="board_member">Board Member</option>
                   <option value="director">Director</option>
                   <option value="hr_manager">HR Manager</option>

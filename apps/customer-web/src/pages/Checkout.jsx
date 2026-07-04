@@ -21,14 +21,72 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [newAddress, setNewAddress] = useState({
-    name: user?.name || '',
+    fullName: user?.name || '',
     phone: user?.phone || '',
-    address: '',
+    addressLine1: '',
+    addressLine2: '',
     city: '',
     state: '',
     pincode: '',
-    landmark: ''
+    addressType: 'Home'
   });
+
+  const [coupons, setCoupons] = useState([]);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const { data } = await axios.get(`${API_BASE_URL}/coupons`);
+        if (data.success) {
+          setCoupons(data.coupons || []);
+        }
+      } catch (err) {
+        console.error('Error fetching active coupons:', err);
+      }
+    };
+    fetchCoupons();
+  }, []);
+
+  const handleApplyCoupon = async (codeToApply = couponCode) => {
+    const code = typeof codeToApply === 'string' ? codeToApply.trim() : couponCode.trim();
+    if (!code) {
+      toast.error('Please enter a coupon code');
+      return;
+    }
+    setCouponLoading(true);
+    try {
+      const brandIds = (cart.items || [])
+        .map(item => item.product?.brandRef || item.product?.brand || null)
+        .filter(Boolean);
+
+      const { data } = await axios.post(`${API_BASE_URL}/coupon/validate`, {
+        code: code.toUpperCase(),
+        cartTotal: cart.total,
+        brandIds
+      });
+
+      if (data.success) {
+        setAppliedCoupon(data.coupon);
+        toast.success(`Coupon "${data.coupon.code}" applied! You saved ₹${data.coupon.discount.toFixed(2)}`);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to apply coupon');
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    toast.info('Coupon removed');
+  };
+
+  const finalTotal = appliedCoupon ? cart.total - appliedCoupon.discount : (cart?.total || 0);
 
   useEffect(() => {
     if (!cart || cart.items?.length === 0) {
@@ -48,7 +106,7 @@ const Checkout = () => {
 
   const handleSaveAddress = async () => {
     // Validation
-    if (!newAddress.name || !newAddress.phone || !newAddress.address || 
+    if (!newAddress.fullName || !newAddress.phone || !newAddress.addressLine1 || 
         !newAddress.city || !newAddress.state || !newAddress.pincode) {
       toast.error('Please fill all required fields');
       return;
@@ -69,13 +127,14 @@ const Checkout = () => {
       toast.success('Address saved successfully!');
       setShowAddressForm(false);
       setNewAddress({
-        name: user?.name || '',
+        fullName: user?.name || '',
         phone: user?.phone || '',
-        address: '',
+        addressLine1: '',
+        addressLine2: '',
         city: '',
         state: '',
         pincode: '',
-        landmark: ''
+        addressType: 'Home'
       });
     } catch (error) {
       toast.error(error || 'Failed to save address');
@@ -98,7 +157,7 @@ const Checkout = () => {
       const token = localStorage.getItem('token');
       if (paymentMethod === 'card') {
         const { data } = await axios.post(`${API_BASE_URL}/payment/process`, {
-          amount: cart.total
+          amount: finalTotal
         }, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -112,7 +171,7 @@ const Checkout = () => {
       } else if (paymentMethod === 'upi') {
         // Razorpay order creation simulation
         const rzpOrderResp = await axios.post(`${API_BASE_URL}/payment/razorpay/order`, {
-          amount: cart.total
+          amount: finalTotal
         }, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -151,12 +210,22 @@ const Checkout = () => {
           variantId: item.variantId || null,
           variantLabel: item.variantLabel || ''
         })),
-        shippingAddress: selectedAddress,
+        shippingAddress: {
+          name: selectedAddress?.fullName || selectedAddress?.name || '',
+          phone: selectedAddress?.phone || '',
+          address: selectedAddress?.addressLine1 || selectedAddress?.address || '',
+          city: selectedAddress?.city || '',
+          state: selectedAddress?.state || '',
+          pincode: selectedAddress?.pincode || '',
+          landmark: selectedAddress?.addressLine2 || selectedAddress?.landmark || ''
+        },
         paymentInfo: finalPaymentInfo,
         itemsPrice: cart.subtotal,
         taxPrice: cart.tax,
         shippingPrice: cart.shipping,
-        totalPrice: cart.total
+        totalPrice: finalTotal,
+        couponCode: appliedCoupon ? appliedCoupon.code : null,
+        discountAmount: appliedCoupon ? appliedCoupon.discount : 0
       };
 
       const result = await dispatch(createOrder(orderData)).unwrap();
@@ -198,8 +267,8 @@ const Checkout = () => {
                     <input
                       type="text"
                       placeholder="Full Name *"
-                      value={newAddress.name}
-                      onChange={(e) => setNewAddress({...newAddress, name: e.target.value})}
+                      value={newAddress.fullName}
+                      onChange={(e) => setNewAddress({...newAddress, fullName: e.target.value})}
                       required
                     />
                     <input
@@ -235,14 +304,14 @@ const Checkout = () => {
                     <input
                       type="text"
                       placeholder="Landmark (Optional)"
-                      value={newAddress.landmark}
-                      onChange={(e) => setNewAddress({...newAddress, landmark: e.target.value})}
+                      value={newAddress.addressLine2}
+                      onChange={(e) => setNewAddress({...newAddress, addressLine2: e.target.value})}
                     />
                   </div>
                   <textarea
                     placeholder="Address (House No, Building, Street, Area) *"
-                    value={newAddress.address}
-                    onChange={(e) => setNewAddress({...newAddress, address: e.target.value})}
+                    value={newAddress.addressLine1}
+                    onChange={(e) => setNewAddress({...newAddress, addressLine1: e.target.value})}
                     rows="3"
                     required
                   />
@@ -282,8 +351,8 @@ const Checkout = () => {
                         />
                       </div>
                       <div className="address-info">
-                        <h4>{address.name}</h4>
-                        <p>{address.address}</p>
+                        <h4>{address.fullName || address.name}</h4>
+                        <p>{address.addressLine1 || address.address}</p>
                         <p>{address.city}, {address.state} - {address.pincode}</p>
                         <p className="address-phone">Phone: {address.phone}</p>
                         {address.isDefault && (
@@ -384,6 +453,52 @@ const Checkout = () => {
 
               <hr />
 
+              {/* Promo Coupon Section */}
+              <div className="coupon-section" style={{ margin: '15px 0' }}>
+                <label style={{ fontSize: '13px', fontWeight: '700', color: '#111', display: 'block', marginBottom: '6px' }}>Apply Promo Coupon</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    placeholder="Enter Coupon Code"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    style={{ flexGrow: 1, padding: '8px 12px', border: '1px solid #ccc', borderRadius: '4px', textTransform: 'uppercase', fontSize: '13px' }}
+                    disabled={couponLoading}
+                  />
+                  {appliedCoupon ? (
+                    <button type="button" className="btn btn-outline" onClick={handleRemoveCoupon} style={{ padding: '8px 12px', fontSize: '12px' }}>
+                      Remove
+                    </button>
+                  ) : (
+                    <button type="button" className="btn btn-primary" onClick={() => handleApplyCoupon()} disabled={couponLoading || !couponCode.trim()} style={{ padding: '8px 16px', fontSize: '12px', background: '#ffd814', color: '#111', border: '1px solid #fcd200' }}>
+                      {couponLoading ? '...' : 'Apply'}
+                    </button>
+                  )}
+                </div>
+
+                {/* List available coupons */}
+                {coupons.length > 0 && !appliedCoupon && (
+                  <div className="available-coupons" style={{ marginTop: '10px', background: '#f7fafc', padding: '8px', borderRadius: '4px', border: '1px dashed #d1d5db' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#555', display: 'block', marginBottom: '4px' }}>AVAILABLE OFFERS:</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {coupons.map((c) => (
+                        <div key={c._id || c.code} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                          <div>
+                            <strong style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 4px', borderRadius: '3px', textTransform: 'uppercase', fontSize: '11px' }}>{c.code}</strong>
+                            <span style={{ color: '#4b5563', marginLeft: '6px' }}>{c.description || `${c.discount}% Off`}</span>
+                          </div>
+                          <button type="button" onClick={() => handleApplyCoupon(c.code)} style={{ background: 'none', border: 'none', color: '#0284c7', fontWeight: '700', cursor: 'pointer', fontSize: '12px' }}>
+                            APPLY
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <hr />
+
               <div className="summary-row">
                 <span>Subtotal:</span>
                 <span>₹{cart?.subtotal?.toFixed(2)}</span>
@@ -399,11 +514,18 @@ const Checkout = () => {
                 <span>₹{cart?.tax?.toFixed(2)}</span>
               </div>
 
+              {appliedCoupon && (
+                <div className="summary-row" style={{ color: '#c7511f', fontWeight: '600' }}>
+                  <span>Discount ({appliedCoupon.code}):</span>
+                  <span>-₹{appliedCoupon.discount.toFixed(2)}</span>
+                </div>
+              )}
+
               <hr />
 
               <div className="summary-row total">
                 <span>Total:</span>
-                <span>₹{cart?.total?.toFixed(2)}</span>
+                <span>₹{finalTotal.toFixed(2)}</span>
               </div>
 
               <motion.button

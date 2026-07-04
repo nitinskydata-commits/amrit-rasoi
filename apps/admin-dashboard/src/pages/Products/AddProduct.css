@@ -772,3 +772,60 @@
   height: 100%;
   object-fit: cover;
 }
+
+/* Preview Modal Styles */
+.preview-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.preview-modal-content {
+  background: #fff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 800px;
+  min-height: 400px;
+  padding: 30px;
+  position: relative;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+.preview-close-btn {
+  position: absolute;
+  top: 15px; right: 15px;
+  background: none; border: none;
+  font-size: 20px; cursor: pointer; color: #666;
+}
+.preview-header {
+  font-size: 18px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;
+}
+.preview-body {
+  display: flex; gap: 30px;
+}
+.preview-main-img {
+  width: 300px; height: 300px; object-fit: cover; border-radius: 8px;
+}
+.preview-details {
+  flex: 1;
+}
+.preview-brand {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #888;
+}
+.preview-title {
+  font-size: 24px; margin: 10px 0; color: #222;
+}
+.preview-price {
+  font-size: 22px; font-weight: bold; color: #2563eb; margin-bottom: 15px;
+}
+.mrp-price {
+  font-size: 16px; color: #999; text-decoration: line-through; margin-left: 10px; font-weight: normal;
+}
+.preview-desc {
+  font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 20px;
+}
+.preview-add-to-cart-dummy {
+  background: #2563eb; color: #fff; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; cursor: not-allowed; width: 100%; font-weight: 600;
+}

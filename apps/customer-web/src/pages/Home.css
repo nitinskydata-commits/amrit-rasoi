@@ -553,20 +553,23 @@ html {
 
 .hero-slide-btn {
   display: inline-block;
-  background: #f0c14b;
+  background: linear-gradient(180deg, #f7dfa5 0%, #f0c14b 100%);
   border: 1px solid #a88734;
   color: #111;
-  padding: 12px 30px;
-  border-radius: 6px;
-  font-weight: 600;
+  padding: 14px 36px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
   text-decoration: none;
-  transition: all 0.2s;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(240, 193, 75, 0.3), inset 0 1px 0 rgba(255,255,255,0.4);
 }
 
 .hero-slide-btn:hover {
-  background: #eeb933;
-  border-color: #846a29;
+  background: linear-gradient(180deg, #f5d78e 0%, #eeb933 100%);
+  border-color: #9c7e31;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(240, 193, 75, 0.4), inset 0 1px 0 rgba(255,255,255,0.4);
 }
 
 .slideshow-arrow {
@@ -641,16 +644,22 @@ html {
 }
 
 .amazon-grid-card {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(12px);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-  border: 1px solid rgba(255,255,255,0.4);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.04);
+  border: 1px solid rgba(226, 232, 240, 0.8);
   display: flex;
   flex-direction: column;
   height: 440px;
   justify-content: space-between;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+.amazon-grid-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.08), 0 24px 64px rgba(0,0,0,0.06);
 }
 
 .amazon-grid-card h3 {

@@ -11,6 +11,11 @@ const ticketSchema = new mongoose.Schema({
     required: [true, 'Please enter a ticket subject'],
     trim: true
   },
+  orderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Order',
+    default: null
+  },
   description: {
     type: String,
     required: [true, 'Please enter ticket description/details']

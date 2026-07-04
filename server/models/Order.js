@@ -32,6 +32,11 @@ const orderSchema = new mongoose.Schema({
       ref: 'Product',
       required: true
     },
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
     name: String,
     quantity: Number,
     price: Number,   // Selling price snapshot
@@ -178,6 +183,14 @@ const orderSchema = new mongoose.Schema({
   deliveryOTP: {
     type: String,
     default: null
+  },
+  couponCode: {
+    type: String,
+    default: null
+  },
+  discountAmount: {
+    type: Number,
+    default: 0
   },
   createdAt: {
     type: Date,

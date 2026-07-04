@@ -14,7 +14,7 @@ export const useSettings = () => {
 
 export const SettingsProvider = ({ children }) => {
   const [settings, setSettings] = useState({
-    siteName: 'SBMI - Amrit Rasoi',
+    siteName: 'SBMI',
     tagline: 'Fresh & Authentic Indian Food Products',
     supportEmail: 'support@sbmi.com',
     supportPhone: '+91 1234567890',

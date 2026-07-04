@@ -36,6 +36,8 @@ const Warehouses = () => {
   const [isCustomProduct, setIsCustomProduct] = useState(false);
   const [customProductName, setCustomProductName] = useState('');
   
+  const [selectedWarehouse, setSelectedWarehouse] = useState(null); // For Warehouse Details Modal
+  
   // Form State
   const [newWarehouse, setNewWarehouse] = useState({
     name: '',
@@ -203,7 +205,7 @@ const Warehouses = () => {
           else if (occupancyPercent > 75) occupancyColor = '#d97706'; // Orange (75-90%)
 
           return (
-            <div key={wh._id} className="wh-card">
+            <div key={wh._id} className="wh-card" style={{cursor: 'pointer'}} onClick={() => setSelectedWarehouse(wh)}>
               <div className="wh-card-header">
                 <div className="wh-icon-box">
                   <FaWarehouse />
@@ -709,6 +711,89 @@ const Warehouses = () => {
 
               <button type="submit" className="btn btn-primary btn-block">Execute Transfer</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Warehouse Details Modal */}
+      {selectedWarehouse && (
+        <div className="modal-backdrop" onClick={() => setSelectedWarehouse(null)}>
+          <div className="modal" style={{maxWidth: '800px'}} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Warehouse Details: {selectedWarehouse.name} ({selectedWarehouse.code})</h3>
+              <button className="close-btn" onClick={() => setSelectedWarehouse(null)}>✕</button>
+            </div>
+            
+            <div style={{padding: '20px', maxHeight: '70vh', overflowY: 'auto'}}>
+              <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '15px'}}>
+                <div>
+                  <p style={{margin: '0 0 5px 0', fontSize: '13px', color: '#666'}}>Location</p>
+                  <strong style={{fontSize: '14px'}}>{selectedWarehouse.city}, {selectedWarehouse.state}</strong>
+                </div>
+                <div>
+                  <p style={{margin: '0 0 5px 0', fontSize: '13px', color: '#666'}}>Capacity</p>
+                  <strong style={{fontSize: '14px'}}>{selectedWarehouse.currentStockSize} / {selectedWarehouse.capacity} units</strong>
+                </div>
+                <div>
+                  <p style={{margin: '0 0 5px 0', fontSize: '13px', color: '#666'}}>Status</p>
+                  <span className={`badge badge-${selectedWarehouse.status === 'active' ? 'success' : 'warning'}`}>
+                    {selectedWarehouse.status}
+                  </span>
+                </div>
+              </div>
+
+              <h4 style={{marginTop: 0, marginBottom: '15px', fontSize: '16px', color: '#333'}}>Organized Stock Breakdown</h4>
+              <table style={{width: '100%', borderCollapse: 'collapse', marginBottom: '20px'}}>
+                <thead>
+                  <tr style={{borderBottom: '1px solid #eee', textAlign: 'left'}}>
+                    <th style={{padding: '10px', fontSize: '13px', color: '#666'}}>Product</th>
+                    <th style={{padding: '10px', fontSize: '13px', color: '#666'}}>SKU</th>
+                    <th style={{padding: '10px', fontSize: '13px', color: '#666'}}>Variant ID</th>
+                    <th style={{padding: '10px', fontSize: '13px', color: '#666'}}>Available Quantity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const stockMap = {};
+                    ledger.forEach(log => {
+                      if (log.warehouse?._id === selectedWarehouse._id || log.warehouse === selectedWarehouse._id) {
+                        const prodId = log.product?._id || log.product;
+                        const key = `${prodId}_${log.variantId || 'null'}`;
+                        if (!stockMap[key]) {
+                          stockMap[key] = {
+                            productName: log.product?.name || 'Unknown Product',
+                            sku: log.product?.SKU || log.product?.sku || 'N/A',
+                            variantId: log.variantId,
+                            quantity: 0
+                          };
+                        }
+                        stockMap[key].quantity += log.quantityChanged;
+                      }
+                    });
+                    const stockList = Object.values(stockMap).filter(item => item.quantity > 0);
+                    
+                    if (stockList.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan="4" style={{padding: '20px', textAlign: 'center', color: '#888'}}>
+                            No stock found in this warehouse.
+                          </td>
+                        </tr>
+                      );
+                    }
+                    
+                    return stockList.map((item, idx) => (
+                      <tr key={idx} style={{borderBottom: '1px solid #eee'}}>
+                        <td style={{padding: '10px', fontSize: '13px', fontWeight: 'bold'}}>{item.productName}</td>
+                        <td style={{padding: '10px', fontSize: '13px'}}>{item.sku}</td>
+                        <td style={{padding: '10px', fontSize: '12px', color: '#888'}}>{item.variantId || 'Standard'}</td>
+                        <td style={{padding: '10px', fontSize: '14px', fontWeight: 'bold', color: '#059669'}}>{item.quantity} units</td>
+                      </tr>
+                    ));
+                  })()}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

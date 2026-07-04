@@ -16,19 +16,20 @@ const AddProduct = () => {
   const navigate = useNavigate();
   const fileRef = useRef(null);
   const [loading, setLoading] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   // Main Form fields
   const [form, setForm] = useState({
     name: 'Premium Kashmiri Saffron',
     description: '100% pure organic grade-A handpicked saffron threads from the valleys of Kashmir.',
-    brand: 'Amrit Rasoi',
+    brand: 'SBMI',
     productType: 'variable',
     category: 'Groceries',
     subcategory: 'Spices & Herbs',
     status: 'draft',
-    seoTitle: 'Buy Premium Kashmiri Saffron Online - Amrit Rasoi',
-    seoDescription: 'Order 100% pure organic grade-A handpicked saffron threads from Kashmir. Fast delivery across India.',
-    seoKeywords: 'saffron, Kashmiri saffron, organic kesar, amrit rasoi',
+    seoTitle: 'Buy Premium Kashmiri Saffron Online - SBMI',
+    seoDescription: 'Order 100% pure organic grade-A handpicked saffron threads. Fast delivery across India.',
+    seoKeywords: 'saffron, Kashmiri saffron, organic kesar, sbmi',
     canonicalUrl: '',
     isFeatured: true,
     inTodaysDeal: false,
@@ -50,6 +51,7 @@ const AddProduct = () => {
   ]);
   const [categories, setCategories] = useState([]);
   const [globalAttrs, setGlobalAttrs] = useState([]);
+  const [brandsList, setBrandsList] = useState([]);
   
   // Selected attributes mapping: { attrId, name, values: [], selectedValues: [] }
   const [selectedAttrs, setSelectedAttrs] = useState([]);
@@ -73,7 +75,20 @@ const AddProduct = () => {
   useEffect(() => {
     fetchCategories();
     fetchAttributes();
+    fetchBrands();
   }, []);
+
+  const fetchBrands = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const { data } = await axios.get(`${API_BASE_URL}/brands`);
+      if (data.success) {
+        setBrandsList(data.brands);
+      }
+    } catch (e) {
+      console.error('Failed to fetch brands', e);
+    }
+  };
 
 
   const fetchCategories = async () => {
@@ -422,7 +437,7 @@ const AddProduct = () => {
           <button className="btn-draft" onClick={() => handleSubmit('draft')} disabled={loading}>
             Save as Draft
           </button>
-          <button className="btn-preview" onClick={() => alert('Opening live catalog preview...')} type="button">
+          <button className="btn-preview" onClick={() => setShowPreviewModal(true)} type="button">
             Preview
           </button>
           <button className="btn-publish" onClick={() => handleSubmit('published')} disabled={loading}>
@@ -557,11 +572,15 @@ const AddProduct = () => {
             <div className="wz-row">
               <div className="wz-group">
                 <label>Brand</label>
-                <input 
-                  type="text" 
+                <select 
                   value={form.brand} 
                   onChange={e => set('brand', e.target.value)} 
-                />
+                >
+                  <option value="SBMI">SBMI</option>
+                  {brandsList.map(b => (
+                    <option key={b._id} value={b.name}>{b.name}</option>
+                  ))}
+                </select>
               </div>
               <div className="wz-group">
                 <label>Tags</label>
@@ -1124,6 +1143,62 @@ const AddProduct = () => {
           </div>
         </div>
       </div>
+
+      {showPreviewModal && (
+        <div className="preview-modal-overlay" onClick={() => setShowPreviewModal(false)}>
+          <div className="preview-modal-content" onClick={e => e.stopPropagation()}>
+            <button className="preview-close-btn" onClick={() => setShowPreviewModal(false)}>✕</button>
+            <div className="preview-header">Live Storefront Preview</div>
+            <div className="preview-body" style={{ display: 'flex', gap: '30px' }}>
+              <div style={{ flex: '0 0 350px' }}>
+                <img src={previews[0] || "https://images.unsplash.com/photo-1596790011462-2410d413e56a?auto=format&fit=crop&w=400&q=80"} alt="Preview" style={{ width: '100%', height: 'auto', borderRadius: '8px', border: '1px solid #eee' }} />
+              </div>
+              <div className="preview-details" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '14px', color: '#007185', fontWeight: '600', marginBottom: '4px' }}>Visit the {form.brand || 'SBMI'} Store</span>
+                <h3 style={{ fontSize: '24px', fontWeight: '400', lineHeight: '1.3', color: '#0f1111', margin: '0 0 10px 0' }}>{form.name || 'Product Title'}</h3>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid #eee' }}>
+                  <span style={{ color: '#007185', fontSize: '14px' }}>⭐⭐⭐⭐⭐ 4.5</span>
+                  <span style={{ color: '#007185', fontSize: '14px' }}>50+ bought in past month</span>
+                </div>
+
+                <div style={{ marginBottom: '15px' }}>
+                  <span style={{ fontSize: '28px', color: '#0f1111', fontWeight: '500' }}>
+                    <span style={{ fontSize: '14px', position: 'relative', top: '-10px' }}>₹</span>
+                    {form.price || (variants[0]?.price || '599')}
+                  </span>
+                  {(form.mrp || variants[0]?.mrp) && (
+                    <span style={{ fontSize: '14px', color: '#565959', marginLeft: '10px', textDecoration: 'line-through' }}>
+                      M.R.P.: ₹{form.mrp || variants[0]?.mrp}
+                    </span>
+                  )}
+                </div>
+
+                <p style={{ fontSize: '14px', color: '#0f1111', lineHeight: '20px', marginBottom: '20px' }}>
+                  {form.description || 'Product description will appear here...'}
+                </p>
+                
+                {form.productType !== 'simple' && form.productType !== 'digital' && variants.length > 0 && (
+                  <div className="preview-variants" style={{ marginBottom: '20px' }}>
+                    <p style={{fontSize: '14px', fontWeight: '700', color: '#0f1111', margin: '0 0 10px 0'}}>Available Options:</p>
+                    <div style={{display: 'flex', gap: '10px', flexWrap: 'wrap'}}>
+                      {variants.slice(0, 5).map(v => (
+                        <span key={v.id} style={{padding: '6px 12px', border: '1px solid #888C8C', borderRadius: '4px', fontSize: '14px', color: '#111', backgroundColor: '#f0f2f2', cursor: 'pointer'}}>{v.label}</span>
+                      ))}
+                      {variants.length > 5 && <span style={{padding: '6px 12px', fontSize: '14px', color: '#565959'}}>+{variants.length - 5} more</span>}
+                    </div>
+                  </div>
+                )}
+                
+                <div style={{ marginTop: 'auto', display: 'flex', gap: '10px' }}>
+                  <button style={{ flex: 1, backgroundColor: '#ffd814', border: '1px solid #fcd200', borderRadius: '100px', padding: '10px 0', fontSize: '15px', color: '#0f1111', cursor: 'pointer' }}>Add to Cart</button>
+                  <button style={{ flex: 1, backgroundColor: '#ffa41c', border: '1px solid #ff8f00', borderRadius: '100px', padding: '10px 0', fontSize: '15px', color: '#0f1111', cursor: 'pointer' }}>Buy Now</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

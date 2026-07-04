@@ -1,0 +1,141 @@
+.earnings-container {
+  padding: 24px;
+}
+
+.earnings-header {
+  margin-bottom: 24px;
+}
+
+.earnings-header h1 {
+  margin: 0 0 6px 0;
+  font-family: 'Outfit', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.earnings-header p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.stat-icon.gross {
+  background-color: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+}
+
+.stat-icon.commission {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+}
+
+.stat-icon.payout {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+.stat-cardHighlight {
+  background-color: #022c22; /* High green background for settlements */
+  border: 1px solid #064e3b;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.stat-cardHighlight:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -10px rgba(5, 150, 105, 0.4);
+}
+
+.earnings-grid-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 992px) {
+  .earnings-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.earnings-card-left, .earnings-card-right {
+  background-color: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.info-badge {
+  background-color: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.delivered-date-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #cbd5e1;
+}
+
+.delivered-date-cell svg {
+  color: #64748b;
+}
+
+.order-link-ref {
+  font-family: monospace;
+  color: #38bdf8;
+}
+
+/* Bank Profile */
+.bank-profile-box {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bank-profile-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 10px;
+}
+
+.bank-profile-row span {
+  color: #94a3b8;
+}
+
+.bank-profile-row strong, .bank-profile-row span:last-child {
+  color: #ffffff;
+}
+
+.settlement-frequency-alert {
+  background-color: rgba(52, 211, 153, 0.05);
+  border: 1px dashed rgba(52, 211, 153, 0.2);
+  color: #a7f3d0;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.5;
+  margin-top: 10px;
+}
+
+.no-bank-alert {
+  background-color: rgba(239, 68, 68, 0.05);
+  border: 1px dashed rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}

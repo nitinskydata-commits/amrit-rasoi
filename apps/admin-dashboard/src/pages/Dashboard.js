@@ -127,7 +127,7 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {stats?.recentOrders?.slice(0, 5).map((order) => (
+                {(stats?.recentOrders || []).slice(0, 5).map((order) => (
                   <tr key={order._id}>
                     <td>#{order._id.slice(-6)}</td>
                     <td>{order.user?.name}</td>

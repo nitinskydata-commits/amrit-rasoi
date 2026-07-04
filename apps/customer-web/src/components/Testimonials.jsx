@@ -2,7 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
+import { FaStar } from 'react-icons/fa';
 import './Testimonials.css';
+
+const getInitials = (name) => {
+  if (!name) return 'U';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
 
 const Testimonials = () => {
   const [testimonials, setTestimonials] = useState([]);
@@ -48,20 +56,39 @@ const Testimonials = () => {
               transition={{ duration: 0.5 }}
             >
               <div className="testimonial-header">
-                {testimonial.customerImage?.url && (
+                {testimonial.customerImage?.url ? (
                   <img 
                     src={testimonial.customerImage.url} 
                     alt={testimonial.customerName}
                     className="customer-avatar"
                   />
+                ) : (
+                  <div className="customer-avatar-fallback" style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    backgroundColor: '#febd69',
+                    color: '#111',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: '700',
+                    fontSize: '15px',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                    marginRight: '12px'
+                  }}>
+                    {getInitials(testimonial.customerName)}
+                  </div>
                 )}
                 <div className="customer-info">
                   <h4>{testimonial.customerName}</h4>
-                  <div className="rating">
+                  <div className="rating" style={{ display: 'flex', gap: '3px', marginTop: '4px' }}>
                     {[...Array(5)].map((_, i) => (
-                      <span key={i} className={i < testimonial.rating ? 'star filled' : 'star'}>
-                        ⭐
-                      </span>
+                      <FaStar 
+                        key={i} 
+                        color={i < testimonial.rating ? '#f0c14b' : '#e4e4e4'} 
+                        size={14} 
+                      />
                     ))}
                   </div>
                 </div>

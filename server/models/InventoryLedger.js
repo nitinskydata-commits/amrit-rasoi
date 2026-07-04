@@ -14,7 +14,7 @@ const inventoryLedgerSchema = new mongoose.Schema({
   warehouse: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Warehouse',
-    required: [true, 'Please associate ledger entry with a warehouse'],
+    default: null,
     index: true
   },
   quantityChanged: {

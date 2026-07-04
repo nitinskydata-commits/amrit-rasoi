@@ -111,6 +111,25 @@ async function allocateStockFromWarehouses(productId, variantId, quantity, shipp
   );
 
   if (availableWarehouseIds.length === 0) {
+    // Fallback: Check if the product has global unassigned stock
+    const Product = require('../models/Product');
+    const product = await Product.findById(productId);
+    let globalStock = product ? product.stock : 0;
+    
+    if (variantId && product && product.hasVariants) {
+      const variant = product.variants.id(variantId);
+      if (variant) globalStock = variant.stock;
+    }
+
+    if (globalStock >= quantity) {
+      return [{
+        warehouseId: null,
+        warehouseCode: 'UNASSIGNED',
+        warehouseName: 'Unassigned Location',
+        quantity: quantity
+      }];
+    }
+
     throw new Error('Out of stock: No warehouses have available inventory.');
   }
 

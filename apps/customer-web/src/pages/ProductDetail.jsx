@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 import ProductCard from '../components/ProductCard';
+
 import './ProductDetail.css';
 
 const ProductDetail = () => {
@@ -20,6 +21,7 @@ const ProductDetail = () => {
   const { isAuthenticated } = useSelector(state => state.auth);
   const { wishlist } = useSelector(state => state.wishlist);
   const isInWishlist = wishlist?.some(item => item._id === product?._id);
+  const { settings } = useSelector(state => state.settings);
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [activeImages, setActiveImages] = useState([]);
@@ -191,9 +193,9 @@ const ProductDetail = () => {
     <div className="product-detail-amazon">
       <div className="amazon-container">
         
-        {/* Amazon-Style Breadcrumbs (mocked) */}
+        {/* Amazon-Style Breadcrumbs */}
         <div className="amz-breadcrumbs">
-          <span>Home</span> &rsaquo; <span>{product.category || 'Shop'}</span> &rsaquo; <span>{product.brand || 'Amrit Rasoi'}</span>
+          <span>Home</span> &rsaquo; <span>{product.category || 'Shop'}</span> &rsaquo; <span>{product.brand || 'SBMI'}</span>
         </div>
 
         <div className="amz-layout-grid">
@@ -224,7 +226,7 @@ const ProductDetail = () => {
           {/* CENTER: PRODUCT INFO */}
           <div className="amz-info-col">
             <h1 className="amz-product-title">{product.name}</h1>
-            <a href="#" className="amz-brand-link">Visit the {product.brand || 'Amrit Rasoi'} Store</a>
+            <a href="#" className="amz-brand-link">Visit the {product.brand || 'SBMI'} Store</a>
             
             <div className="amz-ratings-row">
               <span className="amz-rating-number">{(product.ratings || 0).toFixed(1)}</span>
@@ -239,7 +241,7 @@ const ProductDetail = () => {
             <div className="amz-badges-row">
                {(product.inTodaysDeal || product.isFeatured) && (
                  <span className="amz-choice-badge">
-                   <span className="amz-badge-text">Amrit's Choice</span>
+                   <span className="amz-badge-text">SBMI Choice</span>
                    <span className="amz-badge-arrow"></span>
                  </span>
                )}
@@ -264,23 +266,19 @@ const ProductDetail = () => {
             <hr className="amz-divider" />
 
             {/* Offers Grid */}
-            <div className="amz-offers-section">
-              <h3 className="amz-section-subtitle">Offers</h3>
-              <div className="amz-offers-grid">
-                <div className="amz-offer-card">
-                  <h4>Cashback</h4>
-                  <p>Up to ₹50.00 cashback as Amrit Pay Balance.</p>
-                </div>
-                <div className="amz-offer-card">
-                  <h4>Bank Offer</h4>
-                  <p>10% instant discount on HDFC Bank Credit Cards.</p>
-                </div>
-                <div className="amz-offer-card">
-                  <h4>Partner Offers</h4>
-                  <p>Get GST invoice and save up to 18% on business purchases.</p>
+            {settings?.productOffers && settings.productOffers.length > 0 && (
+              <div className="amz-offers-section">
+                <h3 className="amz-section-subtitle">Offers</h3>
+                <div className="amz-offers-grid">
+                  {settings.productOffers.map((offer, idx) => (
+                    <div className="amz-offer-card" key={idx}>
+                      <h4>{offer.title}</h4>
+                      <p>{offer.description}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
 
             <hr className="amz-divider" />
 
@@ -309,7 +307,7 @@ const ProductDetail = () => {
                 <tbody>
                   <tr>
                     <td className="amz-td-label">Brand</td>
-                    <td className="amz-td-value">{product.brand || 'Amrit Rasoi'}</td>
+                    <td className="amz-td-value">{product.brand || 'SBMI'}</td>
                   </tr>
                   <tr>
                     <td className="amz-td-label">Item Weight</td>
@@ -339,7 +337,7 @@ const ProductDetail = () => {
                   ? product.description.split('\n').filter(line => line.trim() !== '').map((line, i) => (
                       <li key={i}>{line}</li>
                     ))
-                  : <li>Premium quality product directly sourced and verified by Amrit Rasoi.</li>
+                  : <li>Premium quality product directly sourced and verified.</li>
                 }
               </ul>
             </div>
@@ -388,11 +386,11 @@ const ProductDetail = () => {
               <div className="amz-buybox-ledger">
                 <div className="ledger-row">
                   <span className="ledger-label">Ships from</span>
-                  <span className="ledger-value">Amrit Rasoi</span>
+                  <span className="ledger-value">{product.seller ? product.brand : 'SBMI'}</span>
                 </div>
                 <div className="ledger-row">
                   <span className="ledger-label">Sold by</span>
-                  <span className="ledger-value">{product.brand || 'Amrit Rasoi'}</span>
+                  <span className="ledger-value">{product.brand || 'SBMI'}</span>
                 </div>
                 <div className="ledger-row secure-tx">
                   <FaLock className="secure-icon" /> Secure transaction

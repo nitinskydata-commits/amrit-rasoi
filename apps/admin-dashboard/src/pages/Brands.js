@@ -10,7 +10,7 @@ const Brands = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    isMainBrand: false,
+    type: 'own',
     isActive: true
   });
 
@@ -41,7 +41,7 @@ const Brands = () => {
       }
       setShowModal(false);
       setEditingBrand(null);
-      setFormData({ name: '', description: '', isMainBrand: false, isActive: true });
+      setFormData({ name: '', description: '', type: 'own', isActive: true });
       fetchBrands();
     } catch (error) {
       alert('Error saving brand');
@@ -53,7 +53,7 @@ const Brands = () => {
     setFormData({
       name: brand.name,
       description: brand.description,
-      isMainBrand: brand.isMainBrand,
+      type: brand.type || 'own',
       isActive: brand.isActive
     });
     setShowModal(true);
@@ -93,7 +93,7 @@ const Brands = () => {
                 <th>Name</th>
                 <th>Description</th>
                 <th>Products</th>
-                <th>Main Brand</th>
+                <th>Brand Type</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -105,10 +105,12 @@ const Brands = () => {
                   <td>{brand.description}</td>
                   <td>{brand.productCount || 0}</td>
                   <td>
-                    {brand.isMainBrand ? (
-                      <span className="badge badge-success">Yes</span>
+                    {brand.type === 'own' ? (
+                      <span className="badge badge-success">Own Brand</span>
+                    ) : brand.type === 'collaborator' ? (
+                      <span className="badge badge-primary">Collaborator</span>
                     ) : (
-                      <span className="badge badge-secondary">No</span>
+                      <span className="badge badge-secondary">Seller</span>
                     )}
                   </td>
                   <td>
@@ -175,14 +177,16 @@ const Brands = () => {
                 />
               </div>
               <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input
-                    type="checkbox"
-                    checked={formData.isMainBrand}
-                    onChange={(e) => setFormData({ ...formData, isMainBrand: e.target.checked })}
-                  />
-                  Main Brand (SBMI)
-                </label>
+                <label>Brand Type *</label>
+                <select
+                  className="form-control"
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                >
+                  <option value="own">Own Brand (SBMI)</option>
+                  <option value="collaborator">Collaborator</option>
+                  <option value="seller">Third-Party Seller</option>
+                </select>
               </div>
               <div className="form-group">
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

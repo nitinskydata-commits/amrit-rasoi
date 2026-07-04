@@ -1,10 +1,11 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const path = require('path');
 const cors = require('cors');
 const connectDB = require('./config/db');
 
-// Load env FIRST
-dotenv.config({ path: './config/config.env' });
+// Load env FIRST — use __dirname so it works from any cwd (monorepo root, server/ etc.)
+dotenv.config({ path: path.join(__dirname, 'config', 'config.env') });
 
 // Create app FIRST
 const app = express();
@@ -67,8 +68,8 @@ const { rateLimiter, nosqlSanitizer, securityHeaders } = require('./middleware/s
 app.use(securityHeaders);
 app.use(rateLimiter);
 app.use(express.json());
-app.use(nosqlSanitizer);
 app.use(express.urlencoded({ extended: true }));
+app.use(nosqlSanitizer);
 
 const isProd = process.env.NODE_ENV === 'production';
 const allowedOrigins = (process.env.CLIENT_ORIGINS || '')
@@ -105,7 +106,7 @@ if (!isProd) {
   });
 }
 
-const path = require('path');
+// path is already required at the top
 
 // Serve uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -116,6 +117,7 @@ const productRoutes = require('./routes/productRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const sellerRoutes = require('./routes/sellerRoutes');
 
 const brandRoutes = require('./routes/brandRoutes');
 const couponRoutes = require('./routes/couponRoutes');
@@ -128,16 +130,16 @@ const testimonialRoutes = require('./routes/testimonials');
 const badgeRoutes = require('./routes/badges');
 const newsletterRoutes = require('./routes/newsletter');
 const organizationRoutes = require('./routes/organizationRoutes');
-const vendorRoutes = require('./routes/vendorRoutes');
-const warehouseRoutes = require('./routes/warehouseRoutes');
-const financeRoutes = require('./routes/financeRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const recommendationRoutes = require('./routes/recommendationRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
+const vendorRoutes = require('./routes/vendorRoutes');
+const financeRoutes = require('./routes/financeRoutes');
 const kycRoutes = require('./routes/kycRoutes');
+const warehouseRoutes = require('./routes/warehouseRoutes');
 
 // Load notification event subscribers
 require('./utils/notificationService');
@@ -199,6 +201,7 @@ app.use('/api/v1', productRoutes);
 app.use('/api/v1', cartRoutes);
 app.use('/api/v1', orderRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/seller', sellerRoutes);
 
 app.use('/api/v1', brandRoutes);
 app.use('/api/v1', couponRoutes);
@@ -211,9 +214,6 @@ app.use('/api/v1/testimonials', testimonialRoutes);
 app.use('/api/v1/badges', badgeRoutes);
 app.use('/api/v1/newsletter', newsletterRoutes);
 app.use('/api/v1/organizations', organizationRoutes);
-app.use('/api/v1/vendor', vendorRoutes);
-app.use('/api/v1/warehouses', warehouseRoutes);
-app.use('/api/v1/finance', financeRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1', wishlistRoutes);
@@ -221,13 +221,16 @@ app.use('/api/v1', paymentRoutes);
 app.use('/api/v1', recommendationRoutes);
 app.use('/api/v1', ticketRoutes);
 app.use('/api/v1', kycRoutes);
+app.use('/api/v1/vendor', vendorRoutes);
+app.use('/api/v1/finance', financeRoutes);
+app.use('/api/v1/warehouses', warehouseRoutes);
 
 const errorHandler = require('./middleware/errorHandler');
 
-// Error handler
+// Error handler (Must be before 404 handler — catches thrown/next(err) errors from routes)
 app.use(errorHandler);
 
-// 404 handler
+// 404 handler (catches all unmatched routes AFTER error handler)
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -271,4 +274,4 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-// Trigger Nodemon refresh to bind to freed port 5002
+

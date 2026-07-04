@@ -112,7 +112,16 @@ exports.updateSettings = async (req, res) => {
 
     // Parse homepage categories if present
     if (req.body.homepageCategories !== undefined) {
-      const val = req.body.homepageCategories;
+      let val = req.body.homepageCategories;
+      if (typeof val === 'string') {
+        try {
+          // If it's sent as a JSON string
+          val = JSON.parse(val);
+        } catch (e) {
+          // Fallback if it's just a comma separated string
+        }
+      }
+      
       if (typeof val === 'string') {
         settings.homepageCategories = val.split(',').map(s => s.trim()).filter(Boolean);
       } else if (Array.isArray(val)) {
@@ -120,6 +129,20 @@ exports.updateSettings = async (req, res) => {
       }
       settings.markModified('homepageCategories');
       console.log('🔹 Homepage categories updated:', settings.homepageCategories);
+    }
+    
+    // Parse bulk business card if present
+    if (req.body.bulkBusinessCard !== undefined) {
+      let val = req.body.bulkBusinessCard;
+      if (typeof val === 'string') {
+        try {
+          val = JSON.parse(val);
+        } catch (e) {}
+      }
+      if (typeof val === 'object' && val !== null) {
+        settings.bulkBusinessCard = val;
+        settings.markModified('bulkBusinessCard');
+      }
     }
 
     // Update social links (grouped)

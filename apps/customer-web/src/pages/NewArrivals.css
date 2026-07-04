@@ -1,0 +1,116 @@
+/* ==========================================
+   New Arrivals Page Styles
+   ========================================== */
+
+.new-arrivals-page {
+  min-height: 60vh;
+  padding: 30px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.new-arrivals-page h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f1111;
+  margin-bottom: 6px;
+}
+
+.new-arrivals-page .arrivals-subtitle {
+  color: #565959;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.new-arrivals-page .arrivals-hero {
+  background: linear-gradient(135deg, #232f3e 0%, #37475a 100%);
+  border-radius: 12px;
+  padding: 28px 32px;
+  margin-bottom: 28px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.new-arrivals-page .arrivals-hero h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.new-arrivals-page .arrivals-hero p {
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 4px 0 0;
+}
+
+.new-arrivals-page .arrivals-hero .new-badge {
+  background: #febd69;
+  color: #0f1111;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.arrivals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.arrivals-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #565959;
+}
+
+.arrivals-empty h3 {
+  font-size: 20px;
+  color: #0f1111;
+  margin-bottom: 8px;
+}
+
+.arrivals-empty p {
+  font-size: 14px;
+}
+
+/* Loading skeleton */
+.arrivals-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: #565959;
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .new-arrivals-page {
+    padding: 20px 12px;
+  }
+  
+  .new-arrivals-page h1 {
+    font-size: 22px;
+  }
+
+  .new-arrivals-page .arrivals-hero {
+    padding: 20px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .new-arrivals-page .arrivals-hero h2 {
+    font-size: 20px;
+  }
+
+  .arrivals-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+}

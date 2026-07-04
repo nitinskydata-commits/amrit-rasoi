@@ -135,14 +135,26 @@ export const addAddress = createAsyncThunk(
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState: {
-    user: JSON.parse(localStorage.getItem('user')) || null,
-    token: localStorage.getItem('token') || null,
-    isAuthenticated: !!localStorage.getItem('token') && localStorage.getItem('token').length > 10,
-    loading: false,
-    error: null,
-    otpSent: false
-  },
+  initialState: (() => {
+    let user = null;
+    let token = null;
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser && storedUser !== 'undefined') user = JSON.parse(storedUser);
+    } catch (e) { /* corrupted localStorage */ }
+    try {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken && storedToken !== 'undefined' && storedToken.length > 10) token = storedToken;
+    } catch (e) { /* corrupted localStorage */ }
+    return {
+      user,
+      token,
+      isAuthenticated: !!token,
+      loading: false,
+      error: null,
+      otpSent: false
+    };
+  })(),
   reducers: {
     clearError: (state) => {
       state.error = null;

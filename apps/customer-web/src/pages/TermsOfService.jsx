@@ -20,7 +20,7 @@ const TermsOfService = () => {
             <section>
               <h2>1. Acceptance of terms</h2>
               <p>
-                By accessing and using SBMI - Amrit Rasoi&apos;s website and services, you accept and
+                By accessing and using SBMI's website and services, you accept and
                 agree to be bound by these Terms of Service. If you do not agree, please do not use our
                 services.
               </p>
@@ -80,7 +80,7 @@ const TermsOfService = () => {
               <h2>7. Intellectual property</h2>
               <p>
                 All content on this website, including text, graphics, logos, and images, is the
-                property of SBMI - Amrit Rasoi and protected by applicable laws. You may not reproduce,
+                property of SBMI and protected by applicable laws. You may not reproduce,
                 distribute, or use any content without our written permission.
               </p>
             </section>
@@ -88,7 +88,7 @@ const TermsOfService = () => {
             <section>
               <h2>8. Limitation of liability</h2>
               <p>
-                SBMI - Amrit Rasoi shall not be liable for any indirect, incidental, or consequential
+                SBMI shall not be liable for any indirect, incidental, or consequential
                 damages arising from the use of our products or services. Our total liability shall not
                 exceed the amount paid for the specific product or service in question.
               </p>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, register, sendOTP, verifyOTP } from '../redux/slices/authSlice';
 import { toast } from 'react-toastify';
@@ -143,7 +143,7 @@ const Login = () => {
           <div className="login-header">
             <img src="/logo.png" alt="SBMI" className="login-logo" />
             <h2>Welcome to SBMI</h2>
-            <p>Amrit Rasoi - Authentic Indian Spices</p>
+            <p>SBMI Platform - Authentic Indian Spices</p>
           </div>
 
           {/* Auth Mode Toggle */}
@@ -218,6 +218,10 @@ const Login = () => {
 
                   <div className="sandbox-hint" style={{ fontSize: '11px', color: '#64748b', background: '#f8fafc', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px', textAlign: 'center' }}>
                     💡 Sandbox Access: <strong>admin@sbmi.com</strong> / <strong>admin123</strong>
+                  </div>
+
+                  <div className="seller-callout" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '12px', borderRadius: '8px', marginBottom: '12px', textAlign: 'center', fontSize: '13px' }}>
+                    🏪 <strong>Are you a merchant?</strong> <Link to="/seller/dashboard" style={{ color: '#15803d', fontWeight: 'bold', textDecoration: 'underline' }}>Sign In to Seller Dashboard</Link> or <Link to="/seller/apply" style={{ color: '#15803d', fontWeight: 'bold', textDecoration: 'underline' }}>Apply Here &rarr;</Link>
                   </div>
 
                   <button type="submit" className="btn-primary" disabled={loading}>
@@ -355,6 +359,10 @@ const Login = () => {
                 />
               </div>
 
+              <div className="seller-callout" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '12px', borderRadius: '8px', marginBottom: '12px', textAlign: 'center', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}>
+                🏢 <strong>Want to sell on SBMI?</strong> Apply for a merchant partner account. <Link to="/seller/apply" style={{ color: '#15803d', fontWeight: 'bold', textDecoration: 'underline' }}>Create Seller Account &rarr;</Link>
+              </div>
+
               <button type="submit" className="btn-primary" disabled={loading}>
                 {loading ? 'Creating Account...' : 'Create Account'}
               </button>
@@ -365,13 +373,13 @@ const Login = () => {
           <div className="partner-gateways">
             <h4>SBMI Operations & Partner Gateways</h4>
             <div className="gateway-links">
-              <a href="http://localhost:3002" target="_blank" rel="noopener noreferrer" className="gateway-btn">
+              <Link to="/seller/dashboard" className="gateway-btn">
                 🏪 Seller Hub
-              </a>
+              </Link>
               <a href="http://localhost:3003" target="_blank" rel="noopener noreferrer" className="gateway-btn">
                 📦 Warehouse Terminal
               </a>
-              <a href="http://localhost:3005" target="_blank" rel="noopener noreferrer" className="gateway-btn">
+              <a href="http://localhost:3006" target="_blank" rel="noopener noreferrer" className="gateway-btn">
                 🛡️ Ops Compliance
               </a>
             </div>

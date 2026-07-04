@@ -43,7 +43,7 @@ export const getProductDetails = createAsyncThunk(
       const { data } = await axios.get(`${API_BASE_URL}/product/${id}`);
       return data;
     } catch (error) {
-      return rejectWithValue(error.response.data.message);
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch product details');
     }
   }
 );
@@ -56,7 +56,7 @@ export const createReview = createAsyncThunk(
       const { data } = await axios.put(`${API_BASE_URL}/review`, reviewData);
       return data;
     } catch (error) {
-      return rejectWithValue(error.response.data.message);
+      return rejectWithValue(error.response?.data?.message || 'Failed to submit review');
     }
   }
 );

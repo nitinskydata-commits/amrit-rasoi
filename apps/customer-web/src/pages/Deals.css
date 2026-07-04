@@ -1,0 +1,133 @@
+/* ==========================================
+   Deals Page Styles
+   ========================================== */
+
+.deals-page {
+  min-height: 60vh;
+  padding: 30px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.deals-page h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f1111;
+  margin-bottom: 6px;
+}
+
+.deals-page .deals-subtitle {
+  color: #565959;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.deals-page .deals-banner {
+  background: linear-gradient(135deg, #cc0c39 0%, #e47911 100%);
+  border-radius: 12px;
+  padding: 28px 32px;
+  margin-bottom: 28px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.deals-page .deals-banner h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.deals-page .deals-banner p {
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 4px 0 0;
+}
+
+.deals-page .deals-timer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.deals-page .deals-timer .timer-block {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  text-align: center;
+  min-width: 50px;
+}
+
+.deals-page .deals-timer .timer-block .timer-value {
+  font-size: 22px;
+  font-weight: 700;
+  display: block;
+  line-height: 1;
+}
+
+.deals-page .deals-timer .timer-block .timer-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  opacity: 0.8;
+  letter-spacing: 0.5px;
+}
+
+.deals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.deals-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #565959;
+}
+
+.deals-empty h3 {
+  font-size: 20px;
+  color: #0f1111;
+  margin-bottom: 8px;
+}
+
+.deals-empty p {
+  font-size: 14px;
+}
+
+/* Loading skeleton */
+.deals-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: #565959;
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .deals-page {
+    padding: 20px 12px;
+  }
+  
+  .deals-page h1 {
+    font-size: 22px;
+  }
+
+  .deals-page .deals-banner {
+    padding: 20px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .deals-page .deals-banner h2 {
+    font-size: 20px;
+  }
+
+  .deals-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+}

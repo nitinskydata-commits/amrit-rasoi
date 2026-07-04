@@ -135,7 +135,7 @@ exports.getDemandForecasts = async (req, res) => {
         const diffDays = Math.min(29, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
         const index = 29 - diffDays; // map to timeline order
         
-        const item = ord.orderItems.find(i => i.product.toString() === prod._id.toString());
+        const item = ord.orderItems.find(i => i.product && i.product.toString() === prod._id.toString());
         if (item && index >= 0 && index < 30) {
           dailySales[index] += item.quantity;
         }

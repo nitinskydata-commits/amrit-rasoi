@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateProfile } from '../redux/slices/authSlice';
 import { toast } from 'react-toastify';
-import { FaUser, FaEnvelope, FaPhone, FaEdit } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaPhone, FaEdit, FaStore } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 import './Profile.css';
 
 const Profile = () => {
@@ -124,21 +125,34 @@ const Profile = () => {
         <div className="quick-links">
           <h3>Quick Links</h3>
           <div className="links-grid">
-            <a href="/orders" className="link-card">
+            <Link to="/orders" className="link-card">
               <i className="fas fa-box"></i>
               <h4>My Orders</h4>
               <p>Track, return or buy again</p>
-            </a>
-            <a href="/addresses" className="link-card">
+            </Link>
+            <Link to="/addresses" className="link-card">
               <i className="fas fa-map-marker-alt"></i>
               <h4>Addresses</h4>
               <p>Manage delivery addresses</p>
-            </a>
-            <a href="/cart" className="link-card">
+            </Link>
+            <Link to="/cart" className="link-card">
               <i className="fas fa-shopping-cart"></i>
               <h4>Shopping Cart</h4>
               <p>View items in cart</p>
-            </a>
+            </Link>
+            {user?.role === 'vendor_owner' || user?.sellerStatus === 'approved' ? (
+              <Link to="/seller/dashboard" className="link-card" style={{ border: '1px solid #f59e0b' }}>
+                <FaStore style={{ color: '#f59e0b', fontSize: '24px', marginBottom: '8px' }} />
+                <h4 style={{ color: '#f59e0b' }}>Seller Dashboard</h4>
+                <p>Manage products, orders and earnings</p>
+              </Link>
+            ) : (
+              <Link to="/seller/apply" className="link-card">
+                <FaStore style={{ color: '#64748b', fontSize: '24px', marginBottom: '8px' }} />
+                <h4>Apply to Sell</h4>
+                <p>Register as a verified merchant</p>
+              </Link>
+            )}
           </div>
         </div>
       </div>

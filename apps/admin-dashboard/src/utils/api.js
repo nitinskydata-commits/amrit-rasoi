@@ -28,6 +28,24 @@ api.interceptors.request.use(
   }
 );
 
+// Add response interceptor to handle 401 Unauthorized and 403 Forbidden globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      // Clear token and redirect to login if unauthorized or forbidden
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      
+      // Only redirect if we are not already on the login page
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth APIs
 export const loginAdmin = (credentials) => api.post('/login', credentials);
 export const getProfile = () => api.get('/me');
@@ -48,6 +66,11 @@ export const bulkDeleteProducts = (productIds) => api.post('/admin/products/bulk
 // Order APIs
 export const getAllOrders = (params) => api.get('/admin/orders', { params });
 export const updateOrderStatus = (id, data) => api.put(`/admin/order/${id}`, data);
+
+// Support Ticket APIs
+export const getAllTickets = () => api.get('/admin/tickets');
+export const updateTicketStatus = (id, status) => api.put(`/admin/tickets/${id}/status`, { status });
+export const replyToTicket = (id, message) => api.put(`/tickets/${id}`, { message });
 export const processRefund = (id, data) => api.put(`/admin/order/${id}/refund`, data);
 export const deleteOrder = (id) => api.delete(`/admin/order/${id}`);
 
@@ -56,6 +79,16 @@ export const getAllUsers = () => api.get('/admin/users');
 export const updateUserRole = (id, role) => api.put(`/admin/user/${id}`, { role });
 export const secureRoleUpdate = (id, data) => api.put(`/admin/user/secure-role-update/${id}`, data);
 export const deleteUser = (id) => api.delete(`/admin/user/${id}`);
+
+// Seller Management APIs
+export const getAllSellers = (params) => api.get('/admin/sellers', { params });
+export const updateSellerStatus = (id, data) => api.put(`/admin/seller/${id}/status`, data);
+export const updateSellerProfile = (id, data) => api.put(`/admin/seller/${id}/profile`, data);
+export const updateWholesaleStatus = (id, data) => api.put(`/admin/wholesale/${id}/status`, data);
+// KYC Pipeline
+export const initiateKYC = (id) => api.put(`/admin/seller/${id}/kyc/initiate`);
+export const completeKYC = (id, data) => api.put(`/admin/seller/${id}/kyc/complete`, data);
+export const finalApproveSeller = (id, data) => api.put(`/admin/seller/${id}/kyc/final-approve`, data);
 
 // Review APIs
 export const getAllReviews = () => api.get('/admin/reviews');

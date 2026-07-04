@@ -218,11 +218,16 @@ const productSchema = new mongoose.Schema({
   
   brand: {
     type: String,
-    default: 'Amrit Rasoi'
+    default: 'SBMI'
   },
-  brandName: {
-    type: String,
-    default: 'Amrit Rasoi'
+  brandRef: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Brand'
+  },
+  seller: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null // null means sold directly by SBMI
   },
   
   stock: {

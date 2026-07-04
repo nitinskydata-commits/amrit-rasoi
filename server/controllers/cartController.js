@@ -1,12 +1,20 @@
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
+const User = require('../models/User');
 
 // Helper: recalculate cart totals
-const recalcTotals = (cart) => {
-  cart.subtotal = cart.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  cart.tax = cart.subtotal * 0.18;
-  cart.shipping = cart.subtotal >= 500 ? 0 : 40;
-  cart.total = cart.subtotal + cart.tax + cart.shipping;
+const recalcTotals = (cart, isWholesale = false) => {
+  let subtotal = cart.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  if (isWholesale) {
+    cart.discount = subtotal * 0.15; // 15% B2B discount
+    subtotal = subtotal - cart.discount;
+  } else {
+    cart.discount = 0;
+  }
+  cart.subtotal = subtotal;
+  cart.tax = subtotal * 0.18;
+  cart.shipping = subtotal >= 500 ? 0 : 40;
+  cart.total = subtotal + cart.tax + cart.shipping;
 };
 
 // Helper: build human-readable variant label from attributes array
@@ -19,10 +27,15 @@ const buildVariantLabel = (variant) => {
 exports.getCart = async (req, res) => {
   try {
     let cart = await Cart.findOne({ user: req.user.id }).populate('items.product');
+    const user = await User.findById(req.user.id);
+    const isWholesale = user?.isWholesale || false;
     
     if (!cart) {
       cart = await Cart.create({ user: req.user.id, items: [] });
     }
+    
+    recalcTotals(cart, isWholesale);
+    await cart.save();
     
     res.status(200).json({
       success: true,
@@ -107,7 +120,9 @@ exports.addToCart = async (req, res) => {
       });
     }
     
-    recalcTotals(cart);
+    const user = await User.findById(req.user.id);
+    const isWholesale = user?.isWholesale || false;
+    recalcTotals(cart, isWholesale);
     await cart.save();
     
     res.status(200).json({
@@ -145,9 +160,12 @@ exports.updateCartItem = async (req, res) => {
       });
     }
     
+    const user = await User.findById(req.user.id);
+    const isWholesale = user?.isWholesale || false;
+    
     item.quantity = quantity;
     
-    recalcTotals(cart);
+    recalcTotals(cart, isWholesale);
     await cart.save();
     
     res.status(200).json({
@@ -174,9 +192,12 @@ exports.removeFromCart = async (req, res) => {
       });
     }
     
+    const user = await User.findById(req.user.id);
+    const isWholesale = user?.isWholesale || false;
+    
     cart.items = cart.items.filter(item => item._id.toString() !== req.params.itemId);
     
-    recalcTotals(cart);
+    recalcTotals(cart, isWholesale);
     await cart.save();
     
     res.status(200).json({

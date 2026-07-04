@@ -53,10 +53,31 @@ const userSchema = new mongoose.Schema({
       'warehouse_staff',
       'delivery_agent',
       'delivery_boy',
+      // B2B Wholesale Customer Role
+      'wholesale_buyer',
       // Customer (Level 6)
       'user'
     ],
     default: 'user'
+  },
+  
+  // ==================== WHOLESALE SYSTEM ====================
+  isWholesale: {
+    type: Boolean,
+    default: false
+  },
+  wholesaleStatus: {
+    type: String,
+    enum: ['none', 'pending', 'approved', 'rejected'],
+    default: 'none'
+  },
+  wholesaleProfile: {
+    companyName: { type: String, default: '' },
+    gstin: { type: String, default: '' },
+    tradeLicense: { type: String, default: '' },
+    businessAddress: { type: String, default: '' },
+    appliedAt: { type: Date, default: null },
+    approvedAt: { type: Date, default: null }
   },
   // Organization this user belongs to (null = platform staff or customer)
   organizationId: {
@@ -85,6 +106,74 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+
+  // ==================== SELLER SYSTEM ====================
+  sellerStatus: {
+    type: String,
+    enum: [
+      'none',          // Not applied
+      'pending',       // Application submitted
+      'kyc_in_progress', // Admin started KYC review
+      'kyc_approved',  // KYC passed, awaiting payment setup from seller
+      'kyc_failed',    // KYC failed with reason
+      'payment_pending', // Seller submitted payment gateway details
+      'approved',      // Fully onboarded active seller
+      'rejected',      // Rejected at any stage
+      'suspended'      // Suspended after approval
+    ],
+    default: 'none'
+  },
+  sellerProfile: {
+    shopName: { type: String, default: '' },
+    shopDescription: { type: String, default: '' },
+    shopLogo: { type: String, default: '' },
+    gstin: { type: String, default: '' },
+    pan: { type: String, default: '' },
+    bankDetails: {
+      bankName: { type: String, default: '' },
+      accountNumber: { type: String, default: '' },
+      ifscCode: { type: String, default: '' },
+      accountHolderName: { type: String, default: '' },
+      upiId: { type: String, default: '' }
+    },
+    businessAddress: {
+      line1: { type: String, default: '' },
+      line2: { type: String, default: '' },
+      city: { type: String, default: '' },
+      state: { type: String, default: '' },
+      pincode: { type: String, default: '' }
+    },
+    appliedAt: { type: Date, default: null },
+    approvedAt: { type: Date, default: null },
+    rejectedAt: { type: Date, default: null },
+    rejectionReason: { type: String, default: '' },
+    commissionRate: { type: Number, default: 10 },
+    // KYC pipeline tracking
+    kycStartedAt: { type: Date, default: null },
+    kycApprovedAt: { type: Date, default: null },
+    kycFailedAt: { type: Date, default: null },
+    kycFailedReason: { type: String, default: '' },
+    // Payment gateway submitted by seller after KYC approval
+    paymentGateway: {
+      upiId: { type: String, default: '' },
+      bankName: { type: String, default: '' },
+      accountNumber: { type: String, default: '' },
+      ifscCode: { type: String, default: '' },
+      accountHolderName: { type: String, default: '' },
+      paymentGatewayProvider: { type: String, default: '' }, // e.g. Razorpay, Stripe
+      merchantId: { type: String, default: '' },
+      submittedAt: { type: Date, default: null }
+    }
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  isPhoneVerified: {
+    type: Boolean,
+    default: false
+  },
+
   branchName: {
     type: String,
     default: null
@@ -140,6 +229,11 @@ userSchema.methods.getJwtToken = function() {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '7d'
   });
+};
+
+// Generate JWT Token (uppercase alias)
+userSchema.methods.getJWTToken = function() {
+  return this.getJwtToken();
 };
 
 // Generate Auth Token (alias)

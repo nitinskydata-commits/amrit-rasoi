@@ -95,6 +95,218 @@ exports.registerDeliveryBoy = async (req, res) => {
   }
 };
 
+// Register Seller (Public — Application for Seller Account)
+exports.registerSeller = async (req, res) => {
+  console.log('🔵 SELLER REGISTRATION RECEIVED:', req.body);
+  try {
+    const { name, email, phone, password, shopName, shopDescription, gstin, pan, bankDetails, businessAddress } = req.body;
+
+    // Check if the user is already authenticated via JWT token in headers
+    let currentUser = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+        currentUser = await User.findById(decoded.id);
+      } catch (err) {
+        console.warn('Optional token verification failed in registerSeller:', err.message);
+      }
+    }
+
+    // If already logged in, upgrade current user directly
+    if (currentUser) {
+      if (currentUser.sellerStatus === 'pending') {
+        return res.status(400).json({
+          success: false,
+          message: 'You already have a pending seller application. Please wait for admin approval.'
+        });
+      }
+      if (currentUser.sellerStatus === 'approved') {
+        return res.status(400).json({
+          success: false,
+          message: 'You already have an approved seller account. Please login to your dashboard.'
+        });
+      }
+
+      if (currentUser.role === 'user' || currentUser.role === 'customer' || !currentUser.role) {
+        currentUser.role = 'vendor_owner';
+      }
+      currentUser.sellerStatus = 'pending';
+      currentUser.sellerProfile = {
+        shopName: shopName || '',
+        shopDescription: shopDescription || '',
+        gstin: gstin || '',
+        pan: pan || '',
+        bankDetails: bankDetails || {},
+        businessAddress: businessAddress || {},
+        appliedAt: new Date(),
+        rejectionReason: ''
+      };
+      await currentUser.save();
+
+      const token = currentUser.getJwtToken();
+      return res.status(200).json({
+        success: true,
+        message: 'Your seller account application has been submitted for review. You will be notified once approved.',
+        token,
+        user: {
+          id: currentUser._id,
+          name: currentUser.name,
+          email: currentUser.email,
+          phone: currentUser.phone,
+          role: currentUser.role,
+          sellerStatus: currentUser.sellerStatus,
+          sellerProfile: currentUser.sellerProfile
+        }
+      });
+    }
+
+    // If not logged in, check for existing user by email/phone
+    const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
+    if (existingUser) {
+      // Security Check: Verify password for the existing user account
+      if (!password) {
+        return res.status(400).json({
+          success: false,
+          message: 'An account with this email/phone already exists. Please provide your password to upgrade to a seller.'
+        });
+      }
+      const isPasswordMatched = await existingUser.comparePassword(password);
+      if (!isPasswordMatched) {
+        return res.status(401).json({
+          success: false,
+          message: 'An account with this email/phone already exists, and the password entered is incorrect.'
+        });
+      }
+
+      // Check seller application status
+      if (existingUser.sellerStatus === 'pending') {
+        return res.status(400).json({
+          success: false,
+          message: 'You already have a pending seller application. Please wait for admin approval.'
+        });
+      }
+
+      if (existingUser.sellerStatus === 'approved') {
+        return res.status(400).json({
+          success: false,
+          message: 'You already have an approved seller account. Please login to your dashboard.'
+        });
+      }
+
+      // Upgrade existing account to seller applicant (keep admin role privileges if already admin)
+      if (existingUser.role === 'user' || existingUser.role === 'customer' || !existingUser.role) {
+        existingUser.role = 'vendor_owner';
+      }
+      existingUser.sellerStatus = 'pending';
+      existingUser.sellerProfile = {
+        shopName: shopName || '',
+        shopDescription: shopDescription || '',
+        gstin: gstin || '',
+        pan: pan || '',
+        bankDetails: bankDetails || {},
+        businessAddress: businessAddress || {},
+        appliedAt: new Date(),
+        rejectionReason: ''
+      };
+      await existingUser.save();
+
+      const token = existingUser.getJwtToken();
+      return res.status(200).json({
+        success: true,
+        message: 'Your seller account application has been submitted for review. You will be notified once approved.',
+        token,
+        user: {
+          id: existingUser._id,
+          name: existingUser.name,
+          email: existingUser.email,
+          phone: existingUser.phone,
+          role: existingUser.role,
+          sellerStatus: existingUser.sellerStatus,
+          sellerProfile: existingUser.sellerProfile
+        }
+      });
+    }
+
+    // Create new user as seller applicant
+    const user = await User.create({
+      name,
+      email,
+      phone,
+      password,
+      role: 'vendor_owner',
+      sellerStatus: 'pending',
+      sellerProfile: {
+        shopName: shopName || '',
+        shopDescription: shopDescription || '',
+        gstin: gstin || '',
+        pan: pan || '',
+        bankDetails: bankDetails || {},
+        businessAddress: businessAddress || {},
+        appliedAt: new Date()
+      },
+      permissions: {
+        manageProducts: true,
+        manageOrders: true,
+        manageReviews: true,
+        manageInventory: true,
+        manageNewsletters: false
+      }
+    });
+
+    const token = user.getJwtToken();
+    console.log('✅ Seller application submitted:', user.email);
+
+    res.status(201).json({
+      success: true,
+      message: 'Your seller account application has been submitted for review. You will be notified once approved.',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        sellerStatus: user.sellerStatus,
+        sellerProfile: user.sellerProfile
+      }
+    });
+  } catch (error) {
+    console.error('❌ Seller Registration error:', error.message);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Get Seller Application Status
+exports.getSellerStatus = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      sellerStatus: user.sellerStatus,
+      sellerProfile: user.sellerProfile,
+      organizationId: user.organizationId
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 // Login User
 exports.login = async (req, res) => {
   console.log('🔵 LOGIN REQUEST RECEIVED:', req.body);
@@ -145,9 +357,12 @@ exports.login = async (req, res) => {
         isSuperAdmin: user.isSuperAdmin || false,
         permissions: user.permissions,
         organization: user.organization,
+        organizationId: user.organizationId,
         organizationType: user.organizationType,
         tenantId: user.tenantId,
-        collaboration: user.collaboration
+        collaboration: user.collaboration,
+        sellerStatus: user.sellerStatus || 'none',
+        sellerProfile: user.sellerProfile || {}
       }
     });
   } catch (error) {
@@ -190,8 +405,8 @@ exports.sendOTP = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'OTP sent successfully',
-      otp // Remove this in production
+      message: 'OTP sent successfully'
+      // OTP is logged to server console for development — never sent in response
     });
   } catch (error) {
     console.error('❌ Send OTP error:', error.message);
@@ -502,3 +717,241 @@ exports.setDefaultAddress = async (req, res) => {
     });
   }
 };
+
+// Register Wholesale Buyer
+exports.registerWholesale = async (req, res) => {
+  console.log('🔵 WHOLESALE REGISTRATION RECEIVED:', req.body);
+  try {
+    const { name, email, phone, password, companyName, gstin, tradeLicense, businessAddress } = req.body;
+
+    // Check if the user is already authenticated via JWT token in headers
+    let currentUser = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+        currentUser = await User.findById(decoded.id);
+      } catch (err) {
+        console.warn('Optional token verification failed in registerWholesale:', err.message);
+      }
+    }
+
+    // If already logged in, upgrade current user directly
+    if (currentUser) {
+      if (currentUser.wholesaleStatus === 'pending') {
+        return res.status(400).json({
+          success: false,
+          message: 'Your wholesale account application is already pending review.'
+        });
+      }
+      if (currentUser.wholesaleStatus === 'approved') {
+        return res.status(400).json({
+          success: false,
+          message: 'Your wholesale account is already approved and active.'
+        });
+      }
+
+      currentUser.role = 'wholesale_buyer';
+      currentUser.wholesaleStatus = 'pending';
+      currentUser.wholesaleProfile = {
+        companyName: companyName || '',
+        gstin: gstin || '',
+        tradeLicense: tradeLicense || '',
+        businessAddress: businessAddress || '',
+        appliedAt: new Date()
+      };
+      await currentUser.save();
+
+      const token = currentUser.getJwtToken();
+      return res.status(200).json({
+        success: true,
+        message: 'Your wholesale account application has been submitted for review.',
+        token,
+        user: currentUser
+      });
+    }
+
+    const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
+    if (existingUser) {
+      // Security Check: Verify password for the existing user account
+      if (!password) {
+        return res.status(400).json({
+          success: false,
+          message: 'An account with this email/phone already exists. Please provide your password to upgrade to a wholesaler.'
+        });
+      }
+      const isPasswordMatched = await existingUser.comparePassword(password);
+      if (!isPasswordMatched) {
+        return res.status(401).json({
+          success: false,
+          message: 'An account with this email/phone already exists, and the password entered is incorrect.'
+        });
+      }
+
+      if (existingUser.wholesaleStatus === 'pending') {
+        return res.status(400).json({
+          success: false,
+          message: 'Your wholesale account application is already pending review.'
+        });
+      }
+      if (existingUser.wholesaleStatus === 'approved') {
+        return res.status(400).json({
+          success: false,
+          message: 'Your wholesale account is already approved and active.'
+        });
+      }
+
+      existingUser.role = 'wholesale_buyer';
+      existingUser.wholesaleStatus = 'pending';
+      existingUser.wholesaleProfile = {
+        companyName: companyName || '',
+        gstin: gstin || '',
+        tradeLicense: tradeLicense || '',
+        businessAddress: businessAddress || '',
+        appliedAt: new Date()
+      };
+      await existingUser.save();
+
+      const token = existingUser.getJwtToken();
+      return res.status(200).json({
+        success: true,
+        message: 'Your wholesale account application has been submitted for review.',
+        token,
+        user: existingUser
+      });
+    }
+
+    const user = await User.create({
+      name,
+      email,
+      phone,
+      password,
+      role: 'wholesale_buyer',
+      wholesaleStatus: 'pending',
+      wholesaleProfile: {
+        companyName: companyName || '',
+        gstin: gstin || '',
+        tradeLicense: tradeLicense || '',
+        businessAddress: businessAddress || '',
+        appliedAt: new Date()
+      }
+    });
+
+    const token = user.getJwtToken();
+    res.status(201).json({
+      success: true,
+      message: 'Wholesale application submitted successfully.',
+      token,
+      user
+    });
+  } catch (error) {
+    console.error('❌ Wholesale Registration error:', error.message);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// ==================== SELLER PAYMENT GATEWAY SETUP ====================
+
+// @desc    Seller submits payment gateway details after KYC approval
+// @route   POST /api/v1/seller/payment-setup
+// @access  Private (Authenticated User with kyc_approved status)
+exports.submitPaymentGateway = async (req, res) => {
+  try {
+    const jwt = require('jsonwebtoken');
+    let currentUser = null;
+
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      const token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      currentUser = await User.findById(decoded.id);
+    }
+
+    if (!currentUser) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
+
+    if (currentUser.sellerStatus !== 'kyc_approved') {
+      return res.status(400).json({
+        success: false,
+        message: `Payment setup is only available after KYC approval. Your status: '${currentUser.sellerStatus}'.`
+      });
+    }
+
+    const {
+      upiId,
+      bankName,
+      accountNumber,
+      ifscCode,
+      accountHolderName,
+      paymentGatewayProvider,
+      merchantId
+    } = req.body;
+
+    if (!upiId && !accountNumber) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one payment method (UPI ID or Bank Account) is required.'
+      });
+    }
+
+    currentUser.sellerProfile.paymentGateway = {
+      upiId: upiId || '',
+      bankName: bankName || '',
+      accountNumber: accountNumber || '',
+      ifscCode: ifscCode || '',
+      accountHolderName: accountHolderName || '',
+      paymentGatewayProvider: paymentGatewayProvider || '',
+      merchantId: merchantId || '',
+      submittedAt: new Date()
+    };
+
+    currentUser.sellerStatus = 'payment_pending';
+    await currentUser.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Payment gateway details submitted. Awaiting final admin approval.',
+      user: {
+        sellerStatus: currentUser.sellerStatus,
+        sellerProfile: currentUser.sellerProfile
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get seller's current pipeline status
+// @route   GET /api/v1/seller/status
+// @access  Private
+exports.getSellerStatus = async (req, res) => {
+  try {
+    const jwt = require('jsonwebtoken');
+    let currentUser = null;
+
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      const token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      currentUser = await User.findById(decoded.id);
+    }
+
+    if (!currentUser) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
+
+    res.status(200).json({
+      success: true,
+      sellerStatus: currentUser.sellerStatus,
+      sellerProfile: currentUser.sellerProfile,
+      name: currentUser.name,
+      email: currentUser.email
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

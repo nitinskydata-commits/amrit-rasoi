@@ -1,10 +1,12 @@
 const Ticket = require('../models/Ticket');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
 const { writeAuditLog } = require('../utils/auditLogger');
 
 // Create Ticket (Customer)
 exports.createTicket = async (req, res) => {
   try {
-    const { subject, description, category, priority } = req.body;
+    const { subject, description, category, priority, orderId } = req.body;
 
     const ticket = await Ticket.create({
       user: req.user.id,
@@ -12,6 +14,7 @@ exports.createTicket = async (req, res) => {
       description,
       category,
       priority,
+      orderId: orderId || null,
       messages: [
         {
           sender: req.user.id,
@@ -25,12 +28,55 @@ exports.createTicket = async (req, res) => {
       action: 'TICKET_CREATED',
       targetModel: 'Ticket',
       targetId: ticket._id,
-      newState: { subject, category, priority }
+      newState: { subject, category, priority, orderId }
     });
+
+    // Notify admins about the new ticket
+    try {
+      const adminUsers = await User.find({ role: { $in: ['admin', 'platform_admin'] } });
+      const notifications = adminUsers.map(admin => ({
+        recipient: admin._id,
+        title: 'New Support Ticket',
+        message: `A new ${priority} priority ticket has been created regarding ${category}.`,
+        type: 'alert',
+        link: '/tickets' // Points to Support Desk
+      }));
+      if (notifications.length > 0) {
+        await Notification.insertMany(notifications);
+      }
+    } catch (notifErr) {
+      console.error('Failed to send admin notification for ticket:', notifErr.message);
+    }
+
+    const populatedTicket = await Ticket.findById(ticket._id)
+      .populate('user', 'name email role')
+      .populate('messages.sender', 'name email role');
 
     res.status(201).json({
       success: true,
-      ticket
+      ticket: populatedTicket
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Get All Tickets (Admin)
+exports.getAllTickets = async (req, res) => {
+  try {
+    const tickets = await Ticket.find()
+      .populate('user', 'name email')
+      .populate('orderId', '_id totalAmount')
+      .populate('messages.sender', 'name email role')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: tickets.length,
+      tickets
     });
   } catch (error) {
     res.status(500).json({

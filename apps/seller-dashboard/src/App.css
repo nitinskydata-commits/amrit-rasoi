@@ -1,0 +1,46 @@
+.seller-app-layout {
+  display: flex;
+  background-color: #0b1512; /* Rich dark forest */
+  min-height: 100vh;
+  color: #f8fafc;
+  font-family: 'Inter', sans-serif;
+}
+
+.seller-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.seller-main-content.sidebar-open {
+  padding-left: 260px;
+}
+
+.seller-main-content.sidebar-closed {
+  padding-left: 80px;
+}
+
+@media (max-width: 768px) {
+  .seller-main-content.sidebar-open,
+  .seller-main-content.sidebar-closed {
+    padding-left: 0;
+  }
+}
+
+.seller-page-content {
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.seller-loading {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #0b1512;
+  color: #34d399;
+  font-size: 16px;
+  font-weight: 500;
+}

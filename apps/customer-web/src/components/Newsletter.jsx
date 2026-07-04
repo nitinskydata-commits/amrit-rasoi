@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import { useSelector } from 'react-redux';
 import { API_BASE_URL } from '../config/api';
 import './Newsletter.css';
 
 const Newsletter = () => {
+  const { settings } = useSelector(state => state.settings);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -54,8 +56,8 @@ const Newsletter = () => {
           viewport={{ once: true }}
         >
           <div className="newsletter-text">
-            <h2>Stay Updated!</h2>
-            <p>Subscribe to our newsletter for exclusive offers and updates</p>
+            <h2>{settings?.sectionHeadings?.newsletterTitle || 'Stay Updated!'}</h2>
+            <p>{settings?.sectionHeadings?.newsletterSubtitle || 'Subscribe to our newsletter for exclusive offers and updates'}</p>
           </div>
           
           <form className="newsletter-form" onSubmit={handleSubmit}>

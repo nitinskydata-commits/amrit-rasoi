@@ -248,29 +248,44 @@
   color: #ff5252;
 }
 
-/* 🔥 AUTOMATED DISCOUNT ENGINE HIGHLIGHTS */
+/* 🔥 PREMIUM DISCOUNT ENGINE HIGHLIGHTS */
 .product-card.high-discount {
-  border: 1px solid #fed1bc; /* Elegant soft gold-orange tint */
-  box-shadow: 0 4px 16px rgba(230, 81, 0, 0.04);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  box-shadow: 0 8px 24px rgba(230, 57, 70, 0.1);
   background: #ffffff;
+  position: relative;
+  overflow: hidden;
 }
 
-/* pseudo bottom element removed for pristine design spacing */
+.product-card.high-discount::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%);
+  z-index: 1;
+}
 
 .high-discount-badge {
-  background: linear-gradient(135deg, #e63946 0%, #d62828 100%) !important; /* Premium crimson-ruby red */
+  background: rgba(255, 65, 108, 0.95) !important;
+  backdrop-filter: blur(8px) !important;
   color: white !important;
   font-weight: 800 !important;
-  padding: 4px 8px !important;
-  border-radius: 4px !important;
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
   font-size: 11px !important;
-  box-shadow: 0 2px 8px rgba(214, 40, 40, 0.25);
-  letter-spacing: 0.5px;
-  animation: pulse-steal-deal 2.5s infinite ease-in-out;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  box-shadow: 0 4px 15px rgba(255, 65, 108, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  animation: premium-pulse 3s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-@keyframes pulse-steal-deal {
-  0% { opacity: 0.95; }
-  50% { opacity: 0.85; }
-  100% { opacity: 0.95; }
+@keyframes premium-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 65, 108, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 65, 108, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 65, 108, 0); }
 }

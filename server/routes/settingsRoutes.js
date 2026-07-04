@@ -10,9 +10,6 @@ const {
 } = require('../controllers/settingsController');
 
 // Public routes
-router.get('/settings', getSettings);  // ✅ CHANGED from '/' to '/settings'
-
-// Public routes
 router.get('/settings', getSettings);
 
 // Admin routes (Moved to adminRoutes.js)

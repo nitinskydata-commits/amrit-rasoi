@@ -29,13 +29,40 @@ const Footer = () => {
         <div className="container">
           <div className="footer-grid">
             
-            <div className="footer-section">
-              <h4>Get to Know Us</h4>
-              <Link to="/about">About Us</Link>
-              <Link to="/careers">Careers</Link>
-              <Link to="/press">Press Releases</Link>
-              <Link to="/science">Amrit Rasoi Science</Link>
-            </div>
+            {settings?.footerLinks && settings.footerLinks.length > 0 ? (
+              settings.footerLinks.map((col, idx) => (
+                <div className="footer-section" key={idx}>
+                  <h4>{col.title}</h4>
+                  {col.links.map((link, lIdx) => (
+                    <Link to={link.url} key={lIdx}>{link.label}</Link>
+                  ))}
+                </div>
+              ))
+            ) : (
+              <>
+                <div className="footer-section">
+                  <h4>Get to Know Us</h4>
+                  <Link to="/about">About Us</Link>
+                  <Link to="/careers">Careers</Link>
+                  <Link to="/press">Press Releases</Link>
+                  <Link to="/about">SBMI Science</Link>
+                </div>
+                <div className="footer-section">
+                  <h4>Make Money with Us</h4>
+                  <Link to="/seller/apply">Sell on SBMI</Link>
+                  <Link to="/login">Sell under Accelerator</Link>
+                  <Link to="/login">Protect & Build Your Brand</Link>
+                  <Link to="/login">Global Trade Supply</Link>
+                </div>
+                <div className="footer-section">
+                  <h4>Let Us Help You</h4>
+                  <Link to="/profile">Your Account</Link>
+                  <Link to="/orders">Returns Centre</Link>
+                  <Link to="/support">Help & Support</Link>
+                  <Link to="/terms">100% Purchase Protection</Link>
+                </div>
+              </>
+            )}
 
             <div className="footer-section">
               <h4>Connect with Us</h4>
@@ -54,23 +81,14 @@ const Footer = () => {
                   <FaInstagram /> Instagram
                 </a>
               )}
+              {!settings?.socialLinks?.facebook && !settings?.socialLinks?.twitter && !settings?.socialLinks?.instagram && (
+                <>
+                  <a href="#" onClick={(e) => e.preventDefault()}><FaFacebook /> Facebook</a>
+                  <a href="#" onClick={(e) => e.preventDefault()}><FaInstagram /> Instagram</a>
+                  <a href="#" onClick={(e) => e.preventDefault()}><FaTwitter /> Twitter</a>
+                </>
+              )}
               <Link to="/contact">Contact Us</Link>
-            </div>
-
-            <div className="footer-section">
-              <h4>Make Money with Us</h4>
-              <Link to="/login">Sell on Amrit Rasoi</Link>
-              <Link to="/login">Sell under Accelerator</Link>
-              <Link to="/login">Protect & Build Your Brand</Link>
-              <Link to="/login">Global Trade Supply</Link>
-            </div>
-
-            <div className="footer-section">
-              <h4>Let Us Help You</h4>
-              <Link to="/profile">Your Account</Link>
-              <Link to="/orders">Returns Centre</Link>
-              <Link to="/support">Help & Support</Link>
-              <Link to="/terms">100% Purchase Protection</Link>
             </div>
 
           </div>
@@ -87,7 +105,7 @@ const Footer = () => {
               ) : (
                 <img src="/logo.png" alt="SBMI" />
               )}
-              <span>{settings?.siteName || 'Amrit Rasoi'}</span>
+              <span>{settings?.siteName || 'SBMI'}</span>
             </div>
             
             {/* Badges removed as per user request to clean up non-working UI */}
@@ -99,12 +117,16 @@ const Footer = () => {
       <div className="footer-bottom">
         <div className="container">
           <div className="footer-legal-links">
-            <Link to="/terms">Conditions of Use</Link>
-            <Link to="/privacy">Privacy Notice</Link>
-            <Link to="/shipping">Shipping & Returns</Link>
+            {(settings?.footerLegalLinks || [
+              { label: 'Conditions of Use', url: '/terms' },
+              { label: 'Privacy Notice', url: '/privacy' },
+              { label: 'Shipping & Returns', url: '/shipping' }
+            ]).map((link, idx) => (
+              <Link to={link.url} key={idx}>{link.label}</Link>
+            ))}
           </div>
           <p className="copyright-text">
-            © 2011-{new Date().getFullYear()}, {settings?.siteName || 'Amrit Rasoi, Inc.'} or its affiliates. Registered GST: {settings?.gstNumber || 'XXXXXXXXXX'}, FSSAI: {settings?.fssaiNumber || 'XXXXXXXXXX'}
+            {settings?.footerText ? settings.footerText : `© 2011-${new Date().getFullYear()}, ${settings?.siteName || 'SBMI, Inc.'} or its affiliates. Registered GST: ${settings?.gstNumber || 'XXXXXXXXXX'}, FSSAI: ${settings?.fssaiNumber || 'XXXXXXXXXX'}`}
           </p>
         </div>
       </div>

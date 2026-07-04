@@ -36,15 +36,37 @@ const Analytics = () => {
     setLoading(true);
     setError(null);
     try {
-      const [salesRes, invRes, foreRes] = await Promise.all([
+      const results = await Promise.allSettled([
         getSalesAnalytics(),
         getInventoryAnalytics(),
         getDemandForecasts()
       ]);
 
-      setSalesData(salesRes.data.data || []);
-      setInventoryData(invRes.data.data || []);
-      setForecastData(foreRes.data.data || []);
+      // Handle Sales Timeline
+      if (results[0].status === 'fulfilled') {
+        setSalesData(results[0].value.data?.data || []);
+      } else {
+        console.error('Sales Analytics fetch failed:', results[0].reason);
+      }
+
+      // Handle Inventory Occupancy
+      if (results[1].status === 'fulfilled') {
+        setInventoryData(results[1].value.data?.data || []);
+      } else {
+        console.error('Inventory Analytics fetch failed:', results[1].reason);
+      }
+
+      // Handle Demand Forecasts
+      if (results[2].status === 'fulfilled') {
+        setForecastData(results[2].value.data?.data || []);
+      } else {
+        console.error('Demand Forecasts fetch failed:', results[2].reason);
+      }
+
+      // Only show error screen if ALL metrics failed to load
+      if (results.every(r => r.status === 'rejected')) {
+        setError('Failed to fetch analytics metrics. Please verify backend connection.');
+      }
     } catch (err) {
       console.error('Error fetching analytics data:', err);
       setError('Failed to fetch analytics metrics. Please ensure server is running.');

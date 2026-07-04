@@ -1,0 +1,296 @@
+.admin-tickets-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+}
+
+.tickets-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.tickets-header h1 {
+  font-size: 24px;
+  color: #1f2937;
+  margin: 0;
+}
+
+.tickets-filters select {
+  padding: 8px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.tickets-workspace {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Left Sidebar - Tickets List */
+.tickets-list-sidebar {
+  width: 350px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tickets-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.admin-ticket-card {
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #f3f4f6;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f9fafb;
+}
+
+.admin-ticket-card:hover {
+  background: #f3f4f6;
+  transform: translateY(-2px);
+}
+
+.admin-ticket-card.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.ticket-card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ticket-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 5px 0;
+}
+
+.ticket-card-meta {
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Status & Priority Badges */
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+}
+.status-open { background: #fee2e2; color: #991b1b; }
+.status-progress { background: #fef3c7; color: #92400e; }
+.status-resolved { background: #d1fae5; color: #065f46; }
+.status-closed { background: #f3f4f6; color: #374151; }
+
+.priority-high { color: #dc2626; font-weight: bold; }
+.priority-medium { color: #d97706; font-weight: bold; }
+.priority-low { color: #059669; font-weight: bold; }
+
+/* Right Section - Ticket Conversation */
+.ticket-conversation-panel {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.conversation-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #9ca3af;
+}
+
+.conversation-placeholder svg {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.conversation-header {
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.header-top h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.ticket-actions select {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+}
+
+.header-details {
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.header-details span strong {
+  color: #111827;
+}
+
+/* Chat Messages */
+.messages-container {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: #f3f4f6;
+}
+
+.message-bubble-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 75%;
+}
+
+.message-bubble-wrapper.admin {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.message-bubble-wrapper.customer {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.message-sender {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #4b5563;
+}
+
+.message-sender .badge {
+  font-size: 10px;
+  background: #2563eb;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 5px;
+}
+
+.message-content {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.admin .message-content {
+  background: #2563eb;
+  color: white;
+  border-bottom-right-radius: 0;
+}
+
+.customer .message-content {
+  background: white;
+  color: #1f2937;
+  border-bottom-left-radius: 0;
+}
+
+.message-time {
+  font-size: 11px;
+  margin-top: 5px;
+  color: #9ca3af;
+}
+.admin .message-time { text-align: right; }
+
+/* Reply Box */
+.reply-box {
+  padding: 20px;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+}
+
+.reply-box form {
+  display: flex;
+  gap: 10px;
+}
+
+.reply-box textarea {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.reply-box textarea:focus {
+  border-color: #2563eb;
+}
+
+.btn-send {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0 20px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.btn-send:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.btn-send:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

@@ -17,7 +17,9 @@ exports.createOrder = async (req, res) => {
       itemsPrice,
       taxPrice,
       shippingPrice,
-      totalPrice
+      totalPrice,
+      couponCode,
+      discountAmount
     } = req.body;
 
     if (!orderItems || orderItems.length === 0) {
@@ -121,7 +123,8 @@ exports.createOrder = async (req, res) => {
       
       const orgTaxPrice = Math.round((taxPrice * proportion) * 100) / 100;
       const orgShippingPrice = Math.round((shippingPrice * proportion) * 100) / 100;
-      const orgTotalPrice = Math.round((orgItemsPrice + orgTaxPrice + orgShippingPrice) * 100) / 100;
+      const orgDiscountAmount = discountAmount ? Math.round((discountAmount * proportion) * 100) / 100 : 0;
+      const orgTotalPrice = Math.round((orgItemsPrice + orgTaxPrice + orgShippingPrice - orgDiscountAmount) * 100) / 100;
 
       // Fetch warehouses to get their states for GST calculation
       const Warehouse = require('../models/Warehouse');
@@ -180,6 +183,8 @@ exports.createOrder = async (req, res) => {
         taxPrice: orgTaxPrice,
         shippingPrice: orgShippingPrice,
         totalPrice: orgTotalPrice,
+        couponCode: couponCode || null,
+        discountAmount: orgDiscountAmount,
         invoiceNumber,
         gstBreakdown: {
           cgst: Math.round(totalCgst * 100) / 100,
@@ -221,6 +226,11 @@ exports.createOrder = async (req, res) => {
       });
 
       createdOrders.push(order);
+    }
+    
+    if (couponCode) {
+      const { incrementCouponUsage } = require('./couponController');
+      await incrementCouponUsage(couponCode);
     }
     
     // Clear the cart

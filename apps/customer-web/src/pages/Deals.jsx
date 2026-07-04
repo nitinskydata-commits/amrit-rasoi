@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { getProducts } from '../redux/slices/productSlice';
 import ProductCard from '../components/ProductCard';
 import './Home.css';
+import './Deals.css';
 
 const Deals = () => {
   const dispatch = useDispatch();

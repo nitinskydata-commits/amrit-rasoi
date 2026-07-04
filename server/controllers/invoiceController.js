@@ -19,13 +19,22 @@ exports.getOrderInvoice = async (req, res) => {
       return res.status(403).send('<h1>Not authorized to view this invoice</h1>');
     }
 
-    // Determine supplier details
+    // Determine supplier details dynamically from the shipping origin warehouse
+    const Warehouse = require('../models/Warehouse');
+    const firstItemWithWh = order.orderItems.find(item => item.warehouseId);
+    
     let supplierName = 'SBMI Headquarters';
     let supplierAddress = 'Industrial Area, Phase II, Jaipur, Rajasthan - 302001';
     let supplierPhone = '+91 98765 43210';
     let supplierEmail = 'billing@sbmi.org';
 
-    if (order.organization) {
+    if (firstItemWithWh) {
+      const warehouse = await Warehouse.findById(firstItemWithWh.warehouseId);
+      if (warehouse) {
+        supplierName = warehouse.name;
+        supplierAddress = `${warehouse.address || ''}, ${warehouse.city || ''}, ${warehouse.state || ''}`;
+      }
+    } else if (order.organization) {
       supplierName = order.organization.name;
       const addr = order.organization.address || {};
       supplierAddress = `${addr.line1 || ''}, ${addr.line2 || ''}, ${addr.city || ''}, ${addr.state || ''} - ${addr.pincode || ''}`;

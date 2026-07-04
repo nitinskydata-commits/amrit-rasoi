@@ -105,3 +105,37 @@ exports.authorizePermissions = (...requiredPermissions) => {
     });
   };
 };
+
+// Seller Approval Gate — ensures only approved sellers with an organization can access seller endpoints
+exports.isApprovedSeller = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Please login to access this resource'
+    });
+  }
+
+  if (req.user.sellerStatus !== 'approved') {
+    const statusMessages = {
+      'none': 'You do not have a seller account. Please register as a seller first.',
+      'pending': 'Your seller account is pending approval. Please wait for admin review.',
+      'rejected': 'Your seller application was rejected. Please contact support for details.',
+      'suspended': 'Your seller account has been suspended. Please contact support.'
+    };
+
+    return res.status(403).json({
+      success: false,
+      message: statusMessages[req.user.sellerStatus] || 'Seller access denied.',
+      sellerStatus: req.user.sellerStatus
+    });
+  }
+
+  if (!req.user.organizationId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Your seller organization has not been set up yet. Please contact support.'
+    });
+  }
+
+  next();
+};

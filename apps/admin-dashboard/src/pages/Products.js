@@ -78,7 +78,8 @@ const Products = () => {
   };
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const productName = product.name || '';
+    const matchesSearch = productName.toLowerCase().includes(searchTerm.toLowerCase());
     if (filter === 'low') return matchesSearch && product.stock < 10;
     if (filter === 'out') return matchesSearch && product.stock === 0;
     return matchesSearch;

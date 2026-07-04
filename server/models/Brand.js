@@ -24,6 +24,11 @@ const brandSchema = new mongoose.Schema({
     public_id: String,
     url: String
   },
+  type: {
+    type: String,
+    enum: ['own', 'collaborator', 'seller'],
+    default: 'own'
+  },
   isMainBrand: {
     type: Boolean,
     default: false

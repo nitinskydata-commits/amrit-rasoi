@@ -115,19 +115,18 @@ const Header = () => {
                 aria-label="Search category"
               >
                 <option value="all">All Categories</option>
-                <option value="Spices">Spices</option>
-                <option value="Powders">Powders</option>
-                <option value="Blends">Blends</option>
-                <option value="Organic">Organic</option>
-                <option value="Masalas">Masalas</option>
-                <option value="Seeds">Seeds</option>
-                <option value="Herbs">Herbs</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Fashion">Fashion & Apparel</option>
+                <option value="Grocery">Grocery & Pantry</option>
+                <option value="Home & Kitchen">Home & Kitchen</option>
+                <option value="Beauty">Beauty & Personal Care</option>
+                <option value="Sports">Sports & Outdoors</option>
               </select>
 
               <div className="search-input-container">
                 <input
                   type="search"
-                  placeholder="Search for premium spices, masalas..."
+                  placeholder="Search for products, brands, and categories..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={openDiscovery}
@@ -161,11 +160,10 @@ const Header = () => {
                   <div className="dropdown-menu">
                     <div className="dropdown-column">
                       <h3 className="dropdown-col-title">Your Lists</h3>
-                      <Link to="/lists/create">Create a Spice List</Link>
-                      <Link to="/lists/refills">Organic Spice Refills</Link>
-                      <Link to="/lists/custom">Custom Masala Blends</Link>
-                      <Link to="/wishlist">Spices Wish List</Link>
-                      <Link to="/library">Explore Spice Library</Link>
+                      <Link to="/wishlist">Your Wish List</Link>
+                      <Link to="/deals">Today's Deals</Link>
+                      <Link to="/new-arrivals">New Arrivals</Link>
+                      <Link to="/search">Browse All Products</Link>
                     </div>
 
                     <div className="dropdown-vertical-divider"></div>
@@ -173,9 +171,13 @@ const Header = () => {
                     <div className="dropdown-column">
                       <h3 className="dropdown-col-title">Your Account</h3>
                       <Link to="/profile">Your Account</Link>
-                      <Link to="/orders">Your Spice Orders</Link>
-                      <Link to="/subscribe-save">Subscribe & Save</Link>
-                      <Link to="/recommendations">Spice Recommendations</Link>
+                      <Link to="/orders">Your Orders</Link>
+                      {user?.sellerStatus === 'approved' ? (
+                        <Link to="/seller/dashboard" style={{ color: '#007600', fontWeight: 'bold', background: '#e8f5e9', padding: '4px 8px', borderRadius: '4px', display: 'block' }}>🏪 My Seller Store</Link>
+                      ) : (
+                        <Link to="/seller/apply">Apply to Sell</Link>
+                      )}
+                      <Link to="/deals">Subscribe & Save</Link>
                       <Link to="/help">Help & Support</Link>
                       <Link to="/support">Support Tickets</Link>
 
@@ -189,7 +191,7 @@ const Header = () => {
                             Sign in
                           </Link>
                           <span className="dropdown-new-cust">
-                            New customer? <Link to="/register" className="dropdown-start-here">Start here.</Link>
+                            New customer? <Link to="/login" className="dropdown-start-here">Start here.</Link>
                           </span>
                         </div>
                       )}
@@ -246,16 +248,18 @@ const Header = () => {
             {isAuthenticated && (
               <>
                 <span style={{ color: 'rgba(255,255,255,0.25)', margin: '0 10px', fontSize: '14px' }}>|</span>
-                {(Array.isArray(settings?.homepageCategories) ? settings.homepageCategories : (typeof settings?.homepageCategories === 'string' ? settings.homepageCategories.split(',') : ['Spices', 'Powders', 'Blends', 'Organic'])).map((cat, idx) => (
+                {(Array.isArray(settings?.homepageCategories) ? settings.homepageCategories : (typeof settings?.homepageCategories === 'string' ? settings.homepageCategories.split(',') : ['Spices', 'Powders', 'Blends', 'Organic'])).map((cat, idx) => {
+                  const catName = typeof cat === 'string' ? cat.trim() : (cat.category || cat.title || '').trim();
+                  return (
                   <span 
                     key={idx} 
                     className="nav-link" 
                     style={{ cursor: 'pointer', ...(idx === 0 ? {color: '#febd69', fontWeight: '700'} : {}) }} 
-                    onClick={() => navigate(`/search?category=${encodeURIComponent(cat.trim())}`)}
+                    onClick={() => navigate(`/search?category=${encodeURIComponent(catName)}`)}
                   >
-                    {cat.trim()}
+                    {catName}
                   </span>
-                ))}
+                )})}
               </>
             )}
           </div>

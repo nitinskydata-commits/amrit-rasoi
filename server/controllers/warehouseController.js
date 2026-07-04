@@ -76,7 +76,7 @@ exports.createWarehouse = async (req, res) => {
   }
 };
 
-// @desc    Get all warehouses scoped to current actor
+// @desc    Get all warehouses
 // @route   GET /api/v1/warehouses
 // @access  Private
 exports.getAllWarehouses = async (req, res) => {
@@ -86,10 +86,28 @@ exports.getAllWarehouses = async (req, res) => {
       .populate('manager', 'name email')
       .populate('organization', 'name type');
 
+    // Compute current stock size for each warehouse
+    const InventoryLedger = require('../models/InventoryLedger');
+    const stockAggr = await InventoryLedger.aggregate([
+      { $match: { warehouse: { $in: warehouses.map(w => w._id) } } },
+      { $group: { _id: '$warehouse', totalStock: { $sum: '$quantityChanged' } } }
+    ]);
+
+    const stockMap = {};
+    stockAggr.forEach(item => {
+      stockMap[item._id.toString()] = item.totalStock;
+    });
+
+    const enrichedWarehouses = warehouses.map(wh => {
+      const whObj = wh.toObject();
+      whObj.currentStockSize = stockMap[wh._id.toString()] || 0;
+      return whObj;
+    });
+
     res.status(200).json({
       success: true,
-      count: warehouses.length,
-      data: warehouses
+      count: enrichedWarehouses.length,
+      data: enrichedWarehouses
     });
   } catch (error) {
     res.status(500).json({

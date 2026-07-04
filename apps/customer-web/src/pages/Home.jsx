@@ -17,6 +17,7 @@ const Home = () => {
   const { settings } = useSelector(state => state.settings);
   
   const [dealStrip, setDealStrip] = useState([]);
+  const [newArrivalsStrip, setNewArrivalsStrip] = useState([]);
   const [personalizedRecs, setPersonalizedRecs] = useState([]);
   const [stripLoading, setStripLoading] = useState(true);
   const [recsLoading, setRecsLoading] = useState(false);
@@ -24,34 +25,11 @@ const Home = () => {
   const [overlayAds, setOverlayAds] = useState([]);
   const [currentSlideIdx, setCurrentSlideIdx] = useState(0);
 
-  const categoryMetaData = {
-    'Spices': {
-      title: 'Premium Spices',
-      badge: '🌶️ Hot Deals',
-      img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=400'
-    },
-    'Powders': {
-      title: 'Spice Powders',
-      badge: '🧂 Pure Ground',
-      img: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&w=400'
-    },
-    'Blends': {
-      title: 'Gourmet Blends',
-      badge: '🥘 Rich Masalas',
-      img: 'https://images.unsplash.com/photo-1532336414038-cf190733eb37?auto=format&fit=crop&q=80&w=400'
-    },
-    'Organic': {
-      title: 'Organic Pantry',
-      badge: '🌿 100% Organic',
-      img: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&q=80&w=400'
-    }
-  };
-
   const getCategoryDetails = (catName) => {
-    return categoryMetaData[catName] || {
+    return {
       title: catName,
       badge: '🔥 Popular',
-      img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=400'
+      img: ''
     };
   };
 
@@ -60,13 +38,28 @@ const Home = () => {
     const loadStrips = async () => {
       setStripLoading(true);
       try {
-        const dealsRes = await axios.get(`${API_BASE_URL}/products?todaysDeal=true&limit=8`);
+        const [dealsRes, newArrivalsRes] = await Promise.allSettled([
+          axios.get(`${API_BASE_URL}/products?todaysDeal=true&limit=8`),
+          axios.get(`${API_BASE_URL}/products?newArrivals=true&limit=8`)
+        ]);
+
         if (!cancelled) {
-          setDealStrip(dealsRes.data?.products || []);
+          if (dealsRes.status === 'fulfilled') {
+            setDealStrip(dealsRes.value.data?.products || []);
+          } else {
+            setDealStrip([]);
+          }
+
+          if (newArrivalsRes.status === 'fulfilled') {
+            setNewArrivalsStrip(newArrivalsRes.value.data?.products || []);
+          } else {
+            setNewArrivalsStrip([]);
+          }
         }
       } catch {
         if (!cancelled) {
           setDealStrip([]);
+          setNewArrivalsStrip([]);
         }
       } finally {
         if (!cancelled) setStripLoading(false);
@@ -78,34 +71,7 @@ const Home = () => {
     };
   }, []);
 
-  const defaultSlides = [
-    {
-      _id: 'default-1',
-      title: 'Premium Handpicked Organic Spices',
-      description: 'Sourced directly from authentic Indian spice farms.',
-      image: { url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=1600' },
-      link: '/search?category=Spices',
-      mediaType: 'image'
-    },
-    {
-      _id: 'default-2',
-      title: 'Traditional Masala Blends',
-      description: 'Hand-crafted recipes passed down through generations.',
-      image: { url: 'https://images.unsplash.com/photo-1532336414038-cf190733eb37?auto=format&fit=crop&q=80&w=1600' },
-      link: '/search?category=Blends',
-      mediaType: 'image'
-    },
-    {
-      _id: 'default-3',
-      title: 'Aromatic Whole Seeds & Herbs',
-      description: 'Grown in high-grade rich soils for unmatched depth of aroma.',
-      image: { url: 'https://images.unsplash.com/photo-1509358271058-acd22cc93898?auto=format&fit=crop&q=80&w=1600' },
-      link: '/search?category=Seeds',
-      mediaType: 'image'
-    }
-  ];
-
-  const activeSlides = heroSlides.length > 0 ? heroSlides : defaultSlides;
+  const activeSlides = heroSlides;
 
   useEffect(() => {
     let cancelled = false;
@@ -174,39 +140,9 @@ const Home = () => {
     navigate(`/search?category=${encodeURIComponent(category)}`);
   };
 
-  const categoriesList = Array.isArray(settings?.homepageCategories) ? settings.homepageCategories.map(c => typeof c === 'string' ? c.trim() : c) : (typeof settings?.homepageCategories === 'string' ? settings.homepageCategories.split(',').map(c => c.trim()) : ['Spices', 'Powders', 'Blends', 'Organic']);
+  const categoriesList = Array.isArray(settings?.homepageCategories) ? settings.homepageCategories : [];
   
-  const generateOverlayCards = () => {
-    return categoriesList.slice(0, 4).map((cat, idx) => {
-      const meta = getCategoryDetails(cat);
-      
-      // We create standard spice images for the sub-items so we don't get weird cat or gift box images
-      const subImages = [
-        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300',
-        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300',
-        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300',
-        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300'
-      ];
-      
-      return {
-        _id: `dynamic-card-${idx}`,
-        title: meta.title,
-        description: `Explore our premium selection of ${cat}`,
-        image: { url: meta.img },
-        link: `/search?category=${encodeURIComponent(cat)}`,
-        linkText: `Shop ${cat}`,
-        mediaType: 'image',
-        items: [
-          { label: `Premium ${cat}`, category: cat, img: subImages[0] },
-          { label: `Organic ${cat}`, category: cat, img: subImages[1] },
-          { label: `Bulk ${cat}`, category: cat, img: subImages[2] },
-          { label: `New ${cat}`, category: cat, img: subImages[3] }
-        ]
-      };
-    });
-  };
-
-  const activeOverlayCards = overlayAds.length > 0 ? overlayAds : generateOverlayCards();
+  const activeOverlayCards = overlayAds;
 
   const renderOverlayCard = (card) => {
     let subItems = null;
@@ -227,7 +163,7 @@ const Home = () => {
           <div className="card-sub-grid">
             {subItems.slice(0, 4).map((item, idx) => (
               <div className="sub-grid-item" key={idx} onClick={() => handleCategoryChange(item.category || 'Spices')}>
-                <img src={item.img || item.image || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=300'} alt={item.label} />
+                <img src={item.img || item.image || '/placeholder.png'} alt={item.label} />
                 <span>{item.label}</span>
               </div>
             ))}
@@ -246,7 +182,7 @@ const Home = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundImage: `url(${card.image?.url || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=400'})`,
+            backgroundImage: `url(${card.image?.url || '/placeholder.png'})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             zIndex: 1,
@@ -297,7 +233,9 @@ const Home = () => {
 
 
         {/* Dynamic Hero Slideshow with Amazon-style bottom fade overlay */}
-        <section className="slideshow-container" style={{ height: '380px', position: 'relative', overflow: 'hidden' }}>
+        {/* Dynamic Hero Slideshow with Amazon-style bottom fade overlay */}
+        {activeSlides.length > 0 ? (
+          <section className="slideshow-container" style={{ height: '480px', position: 'relative', overflow: 'hidden' }}>
           {activeSlides.map((slide, idx) => (
             <div
               key={slide._id}
@@ -362,7 +300,7 @@ const Home = () => {
                   display: 'inline-block',
                   marginBottom: '14px',
                   letterSpacing: '0.5px'
-                }}>AMRIT RASOI SPECIAL</span>
+                }}>SBMI SPECIAL</span>
                 <h1 style={{ fontSize: '38px', fontWeight: '800', marginBottom: '10px', lineHeight: '1.2' }}>{slide.title}</h1>
                 <p style={{ fontSize: '15px', opacity: 0.95, marginBottom: '24px', lineHeight: '1.5' }}>{slide.description}</p>
                 <Link to={slide.link || '/search'} style={{
@@ -381,6 +319,83 @@ const Home = () => {
               </div>
             </div>
           ))}
+
+          {/* Left Arrow Button */}
+          {activeSlides.length > 1 && (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentSlideIdx((prev) => (prev - 1 + activeSlides.length) % activeSlides.length);
+              }}
+              style={{
+                position: 'absolute',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                left: '0',
+                width: '80px',
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                fontSize: '50px',
+                fontWeight: '300',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 10,
+                transition: 'all 0.2s',
+                outline: 'none',
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(0, 0, 0, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              &#10094;
+            </button>
+          )}
+
+          {/* Right Arrow Button */}
+          {activeSlides.length > 1 && (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentSlideIdx((prev) => (prev + 1) % activeSlides.length);
+              }}
+              style={{
+                position: 'absolute',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                right: '0',
+                width: '80px',
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                fontSize: '50px',
+                fontWeight: '300',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 10,
+                transition: 'all 0.2s',
+                outline: 'none',
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(0, 0, 0, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              &#10095;
+            </button>
+          )}
+
           {/* Amazon-style bottom fade gradient */}
           <div className="amazon-banner-fade" style={{
             position: 'absolute',
@@ -392,50 +407,121 @@ const Home = () => {
             zIndex: 3
           }} />
         </section>
+        ) : (
+          <section className="slideshow-container-fallback" style={{ 
+            height: '480px', 
+            position: 'relative', 
+            overflow: 'hidden', 
+            background: 'linear-gradient(135deg, #232f3e 0%, #146eb4 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 60px',
+            boxSizing: 'border-box'
+          }}>
+            {/* Ambient Shading */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              bottom: 0,
+              width: '100%',
+              background: 'linear-gradient(to right, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.2) 100%)',
+              zIndex: 1
+            }} />
+            
+            <div style={{ zIndex: 2, color: 'white', maxWidth: '600px', textShadow: '0 2px 10px rgba(0,0,0,0.4)', textAlign: 'left' }}>
+              <span style={{ background: '#ff9900', color: '#111', padding: '4px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', display: 'inline-block', marginBottom: '14px' }}>
+                Unified Marketplace
+              </span>
+              <h1 style={{ fontSize: '38px', fontWeight: '800', marginBottom: '12px', lineHeight: '1.2', color: 'white', fontFamily: 'Outfit, sans-serif' }}>
+                Welcome to SBMI E-Store
+              </h1>
+              <p style={{ fontSize: '15px', opacity: 0.95, marginBottom: '24px', lineHeight: '1.5', color: '#cbd5e1' }}>
+                Your complete all-rounder e-commerce platform. Shop from top verified sellers across electronics, home appliances, pantry goods, personal care, and more.
+              </p>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <Link to="/search" style={{ background: '#ff9900', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', textDecoration: 'none', boxShadow: '0 2px 5px rgba(0,0,0,0.15)' }}>
+                  Browse All Products
+                </Link>
+                <Link to="/seller/apply" style={{ background: 'transparent', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', textDecoration: 'none', border: '1px solid #fff' }}>
+                  Sell on SBMI &rarr;
+                </Link>
+              </div>
+            </div>
+
+            {/* Amazon-style bottom fade gradient */}
+            <div className="amazon-banner-fade" style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '140px',
+              background: 'linear-gradient(to top, #eaeded 0%, rgba(234, 237, 237, 0.8) 40%, rgba(234, 237, 237, 0) 100%)',
+              zIndex: 3
+            }} />
+          </section>
+        )}
 
         {/* Dynamic Multi-Row Grid System */}
         <div className="amazon-grid-container" style={{ marginTop: '-120px', position: 'relative', zIndex: 4, padding: '0 20px' }}>
           
           {/* Row 1 Grid */}
-          <div className="amazon-grid-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+          <div className="amazon-grid-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '20px' }}>
             
             {/* Card 1: Continue Shopping deals */}
-            <div className="amazon-grid-card" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '12px', color: '#111' }}>Continue Shopping Deals</h3>
-              <div className="card-sub-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', flexGrow: 1 }}>
-                {(personalizedRecs.length > 0 ? personalizedRecs : dealStrip).slice(0, 4).map((p, idx) => (
-                  <div key={p._id || idx} className="sub-grid-item" style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => navigate(`/product/${p.slug || p._id}`)}>
-                    <div style={{ height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: '#f7f7f7', borderRadius: '4px', padding: '8px' }}>
-                      <img src={p.image?.url || p.images?.[0]?.url || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=200'} alt={p.name} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
-                    </div>
-                    <span style={{ fontSize: '11px', color: '#c7511f', fontWeight: '700', display: 'block', marginTop: '4px' }}>
-                      {p.price ? `₹${p.price}` : 'Special'}
-                    </span>
-                    <span style={{ fontSize: '10px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{p.name}</span>
-                  </div>
-                ))}
+            {settings?.homepageCards?.card1?.isActive !== false && (
+              <div className="amazon-grid-card" style={{ backgroundColor: 'white', padding: '20px 20px 15px', display: 'flex', flexDirection: 'column', zIndex: 1 }}>
+                <h2 style={{ fontSize: '21px', fontWeight: '700', marginBottom: '10px', color: '#0F1111', lineHeight: '27.3px' }}>{settings?.homepageCards?.card1?.title || 'Continue shopping for'}</h2>
+                <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                  {(() => {
+                    const products = (personalizedRecs.length > 0 ? personalizedRecs : dealStrip).slice(0, 4);
+                    return (
+                      <div className="card-sub-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '15px 15px', flexGrow: 1, minHeight: '275px' }}>
+                        {products.map((p, idx) => (
+                          <div key={p._id || idx} className="sub-grid-item" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }} onClick={() => navigate(`/product/${p.slug || p._id}`)}>
+                            <div style={{ height: '115px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                              <img src={p.image?.url || p.images?.[0]?.url || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=200'} alt={p.name} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
+                            </div>
+                            <span style={{ fontSize: '12px', color: '#0F1111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{p.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+                <Link to="/search" style={{ color: '#007185', fontSize: '13px', fontWeight: '500', textDecoration: 'none', marginTop: '14px', display: 'inline-block' }}>See all recommendations</Link>
               </div>
-              <Link to="/search" style={{ color: '#007185', fontSize: '13px', fontWeight: '600', textDecoration: 'none', marginTop: '16px', display: 'inline-block' }}>See all recommendations</Link>
-            </div>
+            )}
 
             {/* Card 2: Hot Deals on Masalas */}
-            <div className="amazon-grid-card" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '12px', color: '#111' }}>SBMI Hot Deals</h3>
-              <div className="card-sub-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', flexGrow: 1 }}>
-                {(dealStrip.length > 0 ? dealStrip : personalizedRecs).slice(0, 4).map((p, idx) => (
-                  <div key={p._id || idx} className="sub-grid-item" style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => navigate(`/product/${p.slug || p._id}`)}>
-                    <div style={{ height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: '#f7f7f7', borderRadius: '4px', padding: '8px' }}>
-                      <img src={p.image?.url || p.images?.[0]?.url || 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?auto=format&fit=crop&q=80&w=200'} alt={p.name} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
-                    </div>
-                    <span style={{ fontSize: '11px', color: '#b12704', fontWeight: '700', display: 'block', marginTop: '4px' }}>
-                      Min. {p.mrp ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 30}% Off
-                    </span>
-                    <span style={{ fontSize: '10px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{p.name}</span>
-                  </div>
-                ))}
+            {settings?.homepageCards?.card2?.isActive !== false && (
+              <div className="amazon-grid-card" style={{ backgroundColor: 'white', padding: '20px 20px 15px', display: 'flex', flexDirection: 'column', zIndex: 1 }}>
+                <h2 style={{ fontSize: '21px', fontWeight: '700', marginBottom: '10px', color: '#0F1111', lineHeight: '27.3px' }}>{settings?.homepageCards?.card2?.title || 'Up to 60% off | Top deals'}</h2>
+                <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                  {(() => {
+                    const products = (dealStrip.length > 0 ? dealStrip : personalizedRecs).slice(0, 4);
+                    return (
+                      <div className="card-sub-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '15px 15px', flexGrow: 1, minHeight: '275px' }}>
+                        {products.map((p, idx) => (
+                          <div key={p._id || idx} className="sub-grid-item" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }} onClick={() => navigate(`/product/${p.slug || p._id}`)}>
+                            <div style={{ height: '115px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                              <img src={p.image?.url || p.images?.[0]?.url || '/placeholder.png'} alt={p.name} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
+                              <span style={{ backgroundColor: '#CC0C39', color: 'white', padding: '2px 4px', fontSize: '10px', fontWeight: '700', borderRadius: '2px' }}>
+                                {p.mrp ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 30}% off
+                              </span>
+                              <span style={{ color: '#CC0C39', fontSize: '10px', fontWeight: '700' }}>Limited Deal</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+                <Link to="/deals" style={{ color: '#007185', fontSize: '13px', fontWeight: '500', textDecoration: 'none', marginTop: '14px', display: 'inline-block' }}>See all deals</Link>
               </div>
-              <Link to="/deals" style={{ color: '#007185', fontSize: '13px', fontWeight: '600', textDecoration: 'none', marginTop: '16px', display: 'inline-block' }}>Shop all spices deals</Link>
-            </div>
+            )}
 
             {/* Card 3: Dynamic overlay card C */}
             {activeOverlayCards.length > 2 && renderOverlayCard(activeOverlayCards[2])}
@@ -446,39 +532,46 @@ const Home = () => {
           </div>
 
           {/* Row 2 Grid */}
-          <div className="amazon-grid-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+          <div className="amazon-grid-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '20px' }}>
             
-            {/* Card 5: Highest Discount Spice (Dynamic Deal of the Day) */}
-            <div className="amazon-grid-card single-feature-card" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: '#111' }}>Deal of the Day</h3>
-              {dealStrip.length > 0 ? (() => {
-                const maxDiscountSpice = [...dealStrip].sort((a,b) => {
-                  const discA = a.mrp ? (a.mrp - a.price) / a.mrp : 0;
-                  const discB = b.mrp ? (b.mrp - b.price) / b.mrp : 0;
-                  return discB - discA;
-                })[0];
-                return (
-                  <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, cursor: 'pointer' }} onClick={() => navigate(`/product/${maxDiscountSpice.slug || maxDiscountSpice._id}`)}>
-                    <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: '#fcfcfc', borderRadius: '6px', padding: '10px', marginBottom: '12px' }}>
-                      <img src={maxDiscountSpice.image?.url || maxDiscountSpice.images?.[0]?.url || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=400'} alt={maxDiscountSpice.name} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <span style={{ backgroundColor: '#cc0c39', color: 'white', padding: '4px 8px', fontSize: '11px', fontWeight: '800', borderRadius: '2px' }}>
-                        {maxDiscountSpice.mrp ? Math.round(((maxDiscountSpice.mrp - maxDiscountSpice.price) / maxDiscountSpice.mrp) * 100) : 40}% OFF
-                      </span>
-                      <span style={{ color: '#cc0c39', fontSize: '12px', fontWeight: '700' }}>Smart Deal of the Day</span>
-                    </div>
-                    <h4 style={{ fontSize: '14px', color: '#111', fontWeight: '600', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{maxDiscountSpice.name}</h4>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                      <span style={{ fontSize: '18px', fontWeight: '700', color: '#111' }}>₹{maxDiscountSpice.price}</span>
-                      <span style={{ fontSize: '12px', color: '#565959', textDecoration: 'line-through' }}>M.R.P: ₹{maxDiscountSpice.mrp || maxDiscountSpice.price + 99}</span>
-                    </div>
-                  </div>
-                );
-              })() : (
-                <p style={{ fontSize: '13px', color: '#666' }}>No active deals today. Check back later!</p>
-              )}
-            </div>
+            {/* Card 5: Highest Discount Spice (Flipkart style horizontal strip spanning full row) */}
+            {settings?.homepageCards?.dealOfDay?.isActive !== false && (
+              <div className="flipkart-deal-strip" style={{ 
+                gridColumn: '1 / -1', 
+                backgroundColor: 'white', 
+                borderRadius: '8px',
+                display: 'flex', 
+                flexDirection: 'column',
+                zIndex: 1,
+                overflow: 'hidden',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{ background: '#232f3e', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0, color: 'white' }}>{settings?.homepageCards?.dealOfDay?.title || 'Grab or gone'}</h2>
+                  <Link to="/deals" style={{ color: '#ffd814', fontSize: '14px', textDecoration: 'none', fontWeight: '700' }}>VIEW ALL</Link>
+                </div>
+
+                <div style={{ display: 'flex', gap: '16px', padding: '24px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                  {dealStrip.length > 0 ? (
+                    [...dealStrip].sort((a,b) => {
+                      const discA = a.mrp ? (a.mrp - a.price) / a.mrp : 0;
+                      const discB = b.mrp ? (b.mrp - b.price) / b.mrp : 0;
+                      return discB - discA;
+                    }).slice(0, 6).map((p, idx) => (
+                      <div key={p._id || idx} style={{ minWidth: '180px', maxWidth: '200px', cursor: 'pointer', display: 'flex', flexDirection: 'column' }} onClick={() => navigate(`/product/${p.slug || p._id}`)}>
+                        <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f7f8', borderRadius: '8px', padding: '16px', marginBottom: '12px' }}>
+                          <img src={p.image?.url || p.images?.[0]?.url || '/placeholder.png'} alt={p.name} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+                        </div>
+                        <span style={{ fontSize: '14px', color: '#212121', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '4px' }}>{p.name}</span>
+                        <span style={{ fontSize: '15px', color: '#212121', fontWeight: '600' }}>{p.price ? `Under ₹${p.price + 10}` : 'Special offer'}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p style={{fontSize: '14px', color: '#878787'}}>No deals available today.</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Card 6: Dynamic overlay card A */}
             {activeOverlayCards.length > 0 && renderOverlayCard(activeOverlayCards[0])}
@@ -487,21 +580,23 @@ const Home = () => {
             {activeOverlayCards.length > 1 && renderOverlayCard(activeOverlayCards[1])}
 
             {/* Card 8: Partner Benefits & Spices Wholesale */}
-            <div className="amazon-grid-card" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', backgroundImage: 'linear-gradient(135deg, #fff3e0 0%, #ffffff 100%)' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: '#111' }}>SBMI Bulk Business</h3>
-              <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <p style={{ fontSize: '13px', color: '#444', marginBottom: '16px', lineHeight: '1.5' }}>
-                  Register your business and save up to <strong>18% GST input tax credit</strong> plus volume discounts on bulk masala ordering!
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
-                  <span style={{ background: 'white', border: '1px solid #ffd814', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', color: '#664d03', fontWeight: '600' }}>⚡ GST Invoice</span>
-                  <span style={{ background: 'white', border: '1px solid #ffd814', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', color: '#664d03', fontWeight: '600' }}>📦 Catering Packs</span>
+            {(!settings?.bulkBusinessCard || settings.bulkBusinessCard.isActive) && (
+              <div className="amazon-grid-card" style={{ backgroundColor: 'white', padding: '20px', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', backgroundImage: 'linear-gradient(135deg, #fff3e0 0%, #ffffff 100%)' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: '#111' }}>{settings?.bulkBusinessCard?.title || 'SBMI Bulk Business'}</h3>
+                <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <p style={{ fontSize: '13px', color: '#444', marginBottom: '16px', lineHeight: '1.5' }}>
+                    {settings?.bulkBusinessCard?.description || 'Register your business and save up to 18% GST input tax credit plus volume discounts on bulk catalog ordering!'}
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+                    {settings?.bulkBusinessCard?.badge1 && <span style={{ background: 'white', border: '1px solid #ffd814', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', color: '#664d03', fontWeight: '600' }}>{settings.bulkBusinessCard.badge1}</span>}
+                    {settings?.bulkBusinessCard?.badge2 && <span style={{ background: 'white', border: '1px solid #ffd814', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', color: '#664d03', fontWeight: '600' }}>{settings.bulkBusinessCard.badge2}</span>}
+                  </div>
                 </div>
+                <Link to={settings?.bulkBusinessCard?.link || '/wholesale/apply'} style={{ alignSelf: 'flex-start', background: '#ffd814', color: '#111', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', textDecoration: 'none', border: '1px solid #fcd200', textAlign: 'center', boxShadow: '0 2px 5px rgba(213,217,217,.5)' }}>
+                  {settings?.bulkBusinessCard?.buttonText || 'Register Wholesale Account'}
+                </Link>
               </div>
-              <Link to="/login" style={{ alignSelf: 'flex-start', background: '#ffd814', color: '#111', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', textDecoration: 'none', border: '1px solid #fcd200', textAlign: 'center', boxShadow: '0 2px 5px rgba(213,217,217,.5)' }}>
-                Register Wholesale Account
-              </Link>
-            </div>
+            )}
 
           </div>
 
@@ -512,8 +607,8 @@ const Home = () => {
         <section className="home-strip-section today-deals-carousel-section" style={{ background: '#ffffff', borderTop: '1px solid #e7ebeb', padding: '30px 20px', marginBottom: '20px' }}>
           <div className="home-strip-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '15px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#111', margin: 0 }}>🔥 Recommended Spices Deals for You</h2>
-              <span style={{ fontSize: '12px', color: '#c7511f', fontWeight: '600' }}>AI-calibrated loss-proof discounts based on stock, rating and trust reviews</span>
+              <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#111', margin: 0 }}>🔥 Recommended Deals for You</h2>
+              <span style={{ fontSize: '12px', color: '#c7511f', fontWeight: '600' }}>{settings?.sectionHeadings?.dealsSubtitle || 'AI-calibrated loss-proof discounts based on stock, rating and trust reviews'}</span>
             </div>
             <Link to="/deals" style={{ color: '#007185', fontWeight: '600', textDecoration: 'none', fontSize: '14px' }}>See all deals &rarr;</Link>
           </div>
@@ -542,8 +637,8 @@ const Home = () => {
           <section className="home-strip-section" style={{ background: '#ffffff', padding: '30px 20px', marginBottom: '20px' }}>
             <div className="home-strip-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '15px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#111', margin: 0 }}>🍂 Based on your browsing history</h2>
-                <span style={{ fontSize: '12px', color: '#555' }}>Top recommendations curated dynamically by your trust patterns</span>
+                <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#111', margin: 0 }}>{settings?.sectionHeadings?.browsingHistoryTitle || '🍂 Based on your browsing history'}</h2>
+                <span style={{ fontSize: '12px', color: '#555' }}>{settings?.sectionHeadings?.browsingHistorySubtitle || 'Top recommendations curated dynamically by your trust patterns'}</span>
               </div>
               <Link to="/search" style={{ color: '#007185', fontWeight: '600', textDecoration: 'none', fontSize: '14px' }}>More recommendations &rarr;</Link>
             </div>
@@ -560,26 +655,18 @@ const Home = () => {
         {/* Features Trust Bar */}
         <section className="features-section" style={{ background: 'white', padding: '40px 20px', borderTop: '1px solid #eee' }}>
           <div className="features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-            <div className="feature-card" style={{ textAlign: 'center', padding: '15px' }}>
-              <div style={{ fontSize: '28px', marginBottom: '8px' }}>🚚</div>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '4px' }}>Free Delivery</h3>
-              <p style={{ fontSize: '12px', color: '#555' }}>On orders above ₹500</p>
-            </div>
-            <div className="feature-card" style={{ textAlign: 'center', padding: '15px' }}>
-              <div style={{ fontSize: '28px', marginBottom: '8px' }}>✓</div>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '4px' }}>100% Authentic</h3>
-              <p style={{ fontSize: '12px', color: '#555' }}>Premium spice farm sourcing</p>
-            </div>
-            <div className="feature-card" style={{ textAlign: 'center', padding: '15px' }}>
-              <div style={{ fontSize: '28px', marginBottom: '8px' }}>↻</div>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '4px' }}>Easy Returns</h3>
-              <p style={{ fontSize: '12px', color: '#555' }}>7-day hassle-free policy</p>
-            </div>
-            <div className="feature-card" style={{ textAlign: 'center', padding: '15px' }}>
-              <div style={{ fontSize: '28px', marginBottom: '8px' }}>🔒</div>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '4px' }}>Secure Payments</h3>
-              <p style={{ fontSize: '12px', color: '#555' }}>Safe & encrypted transactions</p>
-            </div>
+            {(settings?.featureBadges || [
+              { icon: '🚚', title: 'Free Delivery', subtitle: 'On orders above ₹500', isActive: true },
+              { icon: '✓', title: '100% Authentic', subtitle: 'Premium quality guaranteed', isActive: true },
+              { icon: '↻', title: 'Easy Returns', subtitle: '7-day return policy', isActive: true },
+              { icon: '🔒', title: 'Secure Payments', subtitle: 'Safe & encrypted checkout', isActive: true }
+            ]).filter(b => b.isActive).map((badge, idx) => (
+              <div key={idx} className="feature-card" style={{ textAlign: 'center', padding: '15px' }}>
+                <div style={{ fontSize: '28px', marginBottom: '8px' }}>{badge.icon}</div>
+                <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '4px' }}>{badge.title}</h3>
+                <p style={{ fontSize: '12px', color: '#555' }}>{badge.subtitle}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -593,7 +680,8 @@ const Home = () => {
   return (
     <div className="home">
       {/* Dynamic Hero Slideshow with arrow overlays & dynamic dots */}
-      <section className="hero-slideshow-container">
+      {activeSlides.length > 0 ? (
+        <section className="hero-slideshow-container">
         <div className="slideshow-track">
           {activeSlides.map((slide, idx) => (
             <div
@@ -667,7 +755,12 @@ const Home = () => {
             </div>
           </>
         )}
-      </section>
+        </section>
+      ) : (
+        <section className="hero-slideshow-fallback" style={{ height: '350px', position: 'relative', overflow: 'hidden', background: settings?.defaultHeroGradient || 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', marginBottom: '-220px' }}>
+          {/* Amazon-style bottom fade gradient is built into CSS for this view, but we'll add one if needed, or rely on the grid overlapping */}
+        </section>
+      )}
 
       {/* Amazon-style Overlay Multi-Cards Grid */}
       <div className="amazon-grid-container">
@@ -677,24 +770,27 @@ const Home = () => {
       </div>
 
       {/* Categories Section */}
+      {categoriesList.length > 0 && (
       <section className="categories-section" style={{ padding: '60px 0', background: '#fcfcfc' }}>
         <div className="container">
           <h2 className="section-title" style={{ fontSize: '26px', fontWeight: '700', marginBottom: '28px', color: '#0f1111' }}>Shop by Category</h2>
           <div className="categories-grid">
-            {(settings?.homepageCategories || ['Spices', 'Powders', 'Blends', 'Organic']).map((cat) => {
-              const details = getCategoryDetails(cat);
+            {categoriesList.map((cat, idx) => {
+              const isString = typeof cat === 'string';
+              const catName = isString ? cat.trim() : (cat.category || cat.title || '');
+              const details = isString ? getCategoryDetails(catName) : cat;
               return (
                 <motion.div
-                  key={cat}
+                  key={catName || idx}
                   className="premium-category-card"
-                  onClick={() => handleCategoryChange(cat)}
+                  onClick={() => handleCategoryChange(catName)}
                   whileHover={{ y: -6, scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="category-bg-image" style={{ backgroundImage: `url('${details.img}')` }}></div>
+                  <div className="category-bg-image" style={{ backgroundImage: `url('${details.img || details.image?.url || ''}')` }}></div>
                   <div className="category-card-overlay">
-                    <span className="category-card-badge">{details.badge}</span>
-                    <h3>{details.title}</h3>
+                    <span className="category-card-badge">{details.badge || '🔥 Popular'}</span>
+                    <h3>{details.title || catName}</h3>
                     <span className="category-card-action">Browse Collection &rarr;</span>
                   </div>
                 </motion.div>
@@ -703,6 +799,7 @@ const Home = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* Middle Banner Ad Spot controlled by admin */}
       <AdDisplay position="home-middle" />
@@ -734,9 +831,9 @@ const Home = () => {
           <div className="home-strip-head">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#111', margin: 0 }}>
-                {settings?.homepageDealsHeader || '🔥 SBMI Smart Deals | Spices & Pantry'}
+                {settings?.homepageDealsHeader || '🔥 SBMI Smart Deals | Handpicked Offers'}
               </h2>
-              <span style={{ fontSize: '13px', color: '#c7511f', fontWeight: '600' }}>AI-calibrated loss-proof discounts based on stock levels, seller ratings, and trust reviews</span>
+              <span style={{ fontSize: '13px', color: '#c7511f', fontWeight: '600' }}>AI-calibrated smart discounts based on inventory levels, vendor performance, and customer reviews</span>
             </div>
             <Link to="/deals" style={{ color: '#007185', fontWeight: '600', textDecoration: 'none', fontSize: '14px' }}>See all deals</Link>
           </div>
@@ -759,42 +856,47 @@ const Home = () => {
         </div>
       </section>
 
+      {/* NEW ARRIVALS STRIP (Fallback if products exist but not in deals) */}
+      {(newArrivalsStrip.length > 0) && (
+        <section className="home-strip-section new-arrivals-carousel-section" style={{ background: '#ffffff', borderTop: '1px solid #e7ebeb', padding: '40px 0' }}>
+          <div className="container">
+            <div className="home-strip-head">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#111', margin: 0 }}>
+                  🌟 New Arrivals
+                </h2>
+                <span style={{ fontSize: '13px', color: '#007185', fontWeight: '600' }}>Freshly stocked premium products</span>
+              </div>
+              <Link to="/new-arrivals" style={{ color: '#007185', fontWeight: '600', textDecoration: 'none', fontSize: '14px' }}>See all arrivals</Link>
+            </div>
+            
+            <div className="deals-horizontal-scroll" style={{ display: 'flex', gap: '20px', overflowX: 'auto', padding: '10px 0', scrollbarWidth: 'thin' }}>
+              {newArrivalsStrip.map((product) => (
+                <div key={product._id} style={{ flex: '0 0 260px', minWidth: '260px' }}>
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Features Section */}
       <section className="features-section">
         <div className="container">
           <div className="features-grid">
-            <motion.div 
-              className="feature-card"
-              whileHover={{ y: -5 }}
-            >
-              <div className="feature-icon">🚚</div>
-              <h3>Free Delivery</h3>
-              <p>On orders above ₹500</p>
-            </motion.div>
-            <motion.div 
-              className="feature-card"
-              whileHover={{ y: -5 }}
-            >
-              <div className="feature-icon">✓</div>
-              <h3>100% Authentic</h3>
-              <p>Premium quality guaranteed</p>
-            </motion.div>
-            <motion.div 
-              className="feature-card"
-              whileHover={{ y: -5 }}
-            >
-              <div className="feature-icon">↻</div>
-              <h3>Easy Returns</h3>
-              <p>7-day return policy</p>
-            </motion.div>
-            <motion.div 
-              className="feature-card"
-              whileHover={{ y: -5 }}
-            >
-              <div className="feature-icon">🔒</div>
-              <h3>Secure Payments</h3>
-              <p>Safe & encrypted checkout</p>
-            </motion.div>
+            {(settings?.featureBadges || [
+              { icon: '🚚', title: 'Free Delivery', subtitle: 'On orders above ₹500', isActive: true },
+              { icon: '✓', title: '100% Authentic', subtitle: 'Premium quality guaranteed', isActive: true },
+              { icon: '↻', title: 'Easy Returns', subtitle: '7-day return policy', isActive: true },
+              { icon: '🔒', title: 'Secure Payments', subtitle: 'Safe & encrypted checkout', isActive: true }
+            ]).filter(b => b.isActive).map((badge, idx) => (
+              <motion.div key={idx} className="feature-card" whileHover={{ y: -5 }}>
+                <div className="feature-icon">{badge.icon}</div>
+                <h3>{badge.title}</h3>
+                <p>{badge.subtitle}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>

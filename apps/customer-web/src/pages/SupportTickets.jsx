@@ -8,6 +8,7 @@ import './SupportTickets.css';
 
 const SupportTickets = () => {
   const [tickets, setTickets] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [replyMessage, setReplyMessage] = useState('');
@@ -19,6 +20,7 @@ const SupportTickets = () => {
     subject: '',
     category: 'Order Issue',
     priority: 'Medium',
+    orderId: '',
     description: ''
   });
   const [creatingTicket, setCreatingTicket] = useState(false);
@@ -49,8 +51,21 @@ const SupportTickets = () => {
     }
   };
 
+  const fetchOrders = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const { data } = await axios.get(`${API_BASE_URL}/orders/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOrders(data.orders || []);
+    } catch (error) {
+      console.error('Failed to fetch orders for support tickets', error);
+    }
+  };
+
   useEffect(() => {
     fetchTickets();
+    fetchOrders();
   }, []);
 
   const handleCreateTicket = async (e) => {
@@ -69,6 +84,7 @@ const SupportTickets = () => {
         subject: '',
         category: 'Order Issue',
         priority: 'Medium',
+        orderId: '',
         description: ''
       });
     } catch (error) {
@@ -289,6 +305,23 @@ const SupportTickets = () => {
                     </select>
                   </div>
                 </div>
+                {newTicket.category === 'Order Issue' && (
+                  <div className="form-group">
+                    <label>Select Order</label>
+                    <select
+                      required
+                      value={newTicket.orderId}
+                      onChange={(e) => setNewTicket({ ...newTicket, orderId: e.target.value })}
+                    >
+                      <option value="">-- Choose an Order --</option>
+                      {orders.map(order => (
+                        <option key={order._id} value={order._id}>
+                          Order ID: {order._id} - {new Date(order.createdAt).toLocaleDateString()} (₹{order.totalPrice})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="form-group">
                   <label>Describe the details of your issue</label>
                   <textarea

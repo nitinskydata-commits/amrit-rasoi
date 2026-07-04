@@ -222,3 +222,24 @@ exports.incrementCouponUsage = async (couponCode) => {
     console.error('Error incrementing coupon usage:', error);
   }
 };
+
+// Get active coupons (public)
+exports.getActiveCoupons = async (req, res) => {
+  try {
+    const coupons = await Coupon.find({
+      isActive: true,
+      startDate: { $lte: Date.now() },
+      endDate: { $gte: Date.now() }
+    }).select('code discount discountType minPrice maxDiscount description');
+    
+    res.status(200).json({
+      success: true,
+      coupons
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

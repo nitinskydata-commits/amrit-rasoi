@@ -15,6 +15,7 @@ import EditProduct from './pages/Products/EditProduct';
 import Orders from './pages/Orders';
 import Users from './pages/Users';
 import Reviews from './pages/Reviews';
+import SupportTickets from './pages/SupportTickets';
 import Brands from './pages/Brands';
 import Coupons from './pages/Coupons';
 import Collaborations from './pages/Collaborations';
@@ -23,6 +24,7 @@ import Settings from './pages/Settings';
 import Testimonials from './pages/Testimonials';
 import Badges from './pages/Badges';
 import Newsletter from './pages/Newsletter';
+import SellerManagement from './pages/SellerManagement';
 
 // Enterprise Pages
 import Warehouses from './pages/Warehouses';
@@ -80,6 +82,7 @@ function App() {
               <Route path="/orders" element={<Orders />} />
               <Route path="/users" element={<Users />} />
               <Route path="/reviews" element={<Reviews />} />
+              <Route path="/tickets" element={<SupportTickets />} />
               <Route path="/brands" element={<Brands />} />
               <Route path="/coupons" element={<Coupons />} />
               <Route path="/collaborations" element={<Collaborations />} />
@@ -89,6 +92,7 @@ function App() {
               <Route path="/testimonials" element={<Testimonials />} />
               <Route path="/badges" element={<Badges />} />
               <Route path="/newsletter" element={<Newsletter />} />
+              <Route path="/sellers" element={<SellerManagement />} />
               
               {/* ✅ ENTERPRISE ROUTES */}
               <Route path="/warehouses" element={<Warehouses />} />

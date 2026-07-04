@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllReviews, deleteReview } from '../utils/api';
+import { getAllReviews, deleteReview, createTestimonial } from '../utils/api';
 import { FaTrash, FaStar } from 'react-icons/fa';
 
 const Reviews = () => {
@@ -19,6 +19,24 @@ const Reviews = () => {
       setReviews([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePublishTestimonial = async (review) => {
+    try {
+      const submitData = new FormData();
+      submitData.append('customerName', review.user?.name || 'Verified Customer');
+      submitData.append('rating', review.rating);
+      submitData.append('review', review.comment);
+      submitData.append('productName', review.product?.name || '');
+      submitData.append('isApproved', true);
+      submitData.append('isVisible', true);
+      
+      await createTestimonial(submitData);
+      alert('Review successfully published as a Testimonial!');
+    } catch (error) {
+      console.error('Error publishing testimonial:', error);
+      alert(error.response?.data?.message || 'Failed to publish testimonial');
     }
   };
 
@@ -70,12 +88,23 @@ const Reviews = () => {
                   <td>{review.comment}</td>
                   <td>{new Date(review.createdAt).toLocaleDateString()}</td>
                   <td>
-                    <button 
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleDelete(review._id)}
-                    >
-                      <FaTrash />
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        className="btn btn-sm btn-success"
+                        onClick={() => handlePublishTestimonial(review)}
+                        title="Publish as Testimonial"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <FaStar />
+                      </button>
+                      <button 
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleDelete(review._id)}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

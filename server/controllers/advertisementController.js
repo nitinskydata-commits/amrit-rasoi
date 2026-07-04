@@ -83,6 +83,15 @@ exports.createAd = async (req, res) => {
   try {
     req.body.createdBy = req.user.id;
     
+    // Parse advertiser if sent flat from FormData
+    if (req.body.advertiserName || req.body['advertiser[name]'] || req.body.advertiser) {
+      req.body.advertiser = {
+        name: req.body.advertiserName || req.body['advertiser[name]'] || req.body.advertiser?.name,
+        email: req.body.advertiserEmail || req.body['advertiser[email]'] || req.body.advertiser?.email,
+        phone: req.body.advertiserPhone || req.body['advertiser[phone]'] || req.body.advertiser?.phone
+      };
+    }
+
     // Handle ad image if uploaded
     if (req.file) {
       req.body.image = {
@@ -118,6 +127,15 @@ exports.updateAd = async (req, res) => {
       });
     }
     
+    // Parse advertiser if sent flat from FormData
+    if (req.body.advertiserName || req.body['advertiser[name]'] || req.body.advertiser) {
+      req.body.advertiser = {
+        name: req.body.advertiserName || req.body['advertiser[name]'] || req.body.advertiser?.name,
+        email: req.body.advertiserEmail || req.body['advertiser[email]'] || req.body.advertiser?.email,
+        phone: req.body.advertiserPhone || req.body['advertiser[phone]'] || req.body.advertiser?.phone
+      };
+    }
+
     // Handle image update
     if (req.file) {
       req.body.image = {

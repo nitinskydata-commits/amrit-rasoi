@@ -3,6 +3,19 @@ const ipRequestCounts = new Map();
 const LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const MAX_REQUESTS_PER_WINDOW = 100;
 
+// Periodic cleanup of stale IPs from rate limiter map to prevent memory leak
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, timestamps] of ipRequestCounts.entries()) {
+    const active = timestamps.filter(time => now - time < LIMIT_WINDOW_MS);
+    if (active.length === 0) {
+      ipRequestCounts.delete(ip);
+    } else {
+      ipRequestCounts.set(ip, active);
+    }
+  }
+}, 5 * 60 * 1000).unref(); // Clean up every 5 minutes (unref prevents blocking process exit)
+
 const rateLimiter = (req, res, next) => {
   const ip = req.ip || req.headers['x-forwarded-for'] || '127.0.0.1';
   const now = Date.now();
@@ -53,7 +66,18 @@ const securityHeaders = (req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  
+  // Widen CSP for fonts, Cloudinary imagery, and standard resources
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
+    "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
+    "img-src 'self' data: https://res.cloudinary.com https://images.unsplash.com http://localhost:5002 http://127.0.0.1:5002",
+    "connect-src 'self' http://localhost:5002 http://127.0.0.1:5002"
+  ].join('; ');
+  
+  res.setHeader('Content-Security-Policy', csp);
   next();
 };
 

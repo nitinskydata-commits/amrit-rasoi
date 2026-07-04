@@ -16,17 +16,25 @@ const Login = ({ onLogin }) => {
     try {
       const response = await loginAdmin({ email, password });
       
-      if (response.data.success && response.data.user.role === 'admin') {
+      const allowedRoles = [
+            'admin', 'platform_admin', 'staff', 'partner_admin',
+            'vendor_owner', 'vendor_staff', 'inventory_manager',
+            'order_manager', 'warehouse_manager', 'warehouse_staff',
+            'delivery_agent', 'delivery_boy', 'finance_staff',
+            'support_staff', 'marketing_manager', 'moderator',
+            'regional_manager', 'franchise_manager', 'branch_manager'
+          ];
+      if (response.data.success && allowedRoles.includes(response.data.user.role)) {
         localStorage.setItem('adminToken', response.data.token);
         localStorage.setItem('adminUser', JSON.stringify(response.data.user));
         onLogin();
       } else {
-        setError('Access denied. Admin privileges required.');
+        setError('Access denied. Admin or staff privileges required.');
       }
     } catch (err) {
       console.error('Login error:', err);
       if (!err.response) {
-        setError('Server unreachable. Please ensure the backend is running on port 5000.');
+        setError('Server unreachable. Please ensure the backend is running on port 5002.');
       } else if (err.response.status === 503) {
         setError('Database connection error. The server is up but cannot reach MongoDB.');
       } else {

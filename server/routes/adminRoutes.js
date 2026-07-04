@@ -29,7 +29,14 @@ const {
   getSalesAnalytics,
   getInventory,
   updateBulkInventory,
-  getAuditLogs
+  getAuditLogs,
+  getAllSellers,
+  updateSellerStatus,
+  updateWholesaleStatus,
+  updateSellerProfileAdmin,
+  initiateKYC,
+  completeKYC,
+  finalApproveSeller
 } = require('../controllers/adminController');
 
 const {
@@ -128,12 +135,12 @@ router.get('/inventory', scopePartnerCatalog, authorizePermissions('manageInvent
 router.put('/inventory/bulk', scopePartnerCatalog, authorizePermissions('manageInventory'), updateBulkInventory);
 
 // Orders Management (Super Admin & Authorized Staff only)
-router.get('/orders', authorizePermissions('manageOrders'), getAllOrdersAdmin);
-router.put('/order/:id', authorizePermissions('manageOrders'), updateOrderStatus);
+router.get('/orders', authorizePermissions('manageOrders', 'manageDeliveries'), getAllOrdersAdmin);
+router.put('/order/:id', authorizePermissions('manageOrders', 'manageDeliveries'), updateOrderStatus);
 router.put('/order/:id/refund', authorizePermissions('manageOrders'), processRefund);
 router.delete('/order/:id', authorizePermissions('manageOrders'), deleteOrder);
-router.post('/order/:id/send-delivery-otp', authorizePermissions('manageOrders'), sendDeliveryOTP);
-router.post('/order/:id/verify-delivery', authorizePermissions('manageOrders'), verifyDeliveryOTP);
+router.post('/order/:id/send-delivery-otp', authorizePermissions('manageOrders', 'manageDeliveries'), sendDeliveryOTP);
+router.post('/order/:id/verify-delivery', authorizePermissions('manageOrders', 'manageDeliveries'), verifyDeliveryOTP);
 router.put('/order/:id/return/pickup', authorizePermissions('manageOrders'), assignReturnPickup);
 router.put('/order/:id/return/inspect', authorizePermissions('manageOrders'), inspectReturnedItem);
 
@@ -250,8 +257,6 @@ router.delete('/badges/:id', async (req, res) => {
   }
 });
 
-
-// Site Settings
 router.get('/settings', getSettings); // ✅ FIXED from updateSettings
 router.put('/settings', upload.fields([
   { name: 'logo', maxCount: 1 },
@@ -262,5 +267,17 @@ router.put('/change-password', changeAdminPassword);
 
 // System Audit Logs
 router.get('/audit-logs', isAuthenticatedUser, authorizeRoles('admin', 'platform_admin'), getAuditLogs);
+
+// Seller Management (Admin Only)
+router.get('/sellers', authorizeRoles('admin', 'platform_admin'), getAllSellers);
+router.put('/seller/:id/status', authorizeRoles('admin', 'platform_admin'), updateSellerStatus);
+router.put('/seller/:id/profile', authorizeRoles('admin', 'platform_admin'), updateSellerProfileAdmin);
+// KYC Pipeline
+router.put('/seller/:id/kyc/initiate', authorizeRoles('admin', 'platform_admin'), initiateKYC);
+router.put('/seller/:id/kyc/complete', authorizeRoles('admin', 'platform_admin'), completeKYC);
+router.put('/seller/:id/kyc/final-approve', authorizeRoles('admin', 'platform_admin'), finalApproveSeller);
+
+// Wholesale Management (Admin Only)
+router.put('/wholesale/:id/status', authorizeRoles('admin', 'platform_admin'), updateWholesaleStatus);
 
 module.exports = router;

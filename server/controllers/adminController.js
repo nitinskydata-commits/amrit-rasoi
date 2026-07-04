@@ -13,9 +13,19 @@ const { syncProductStockFromLedger } = require('../utils/inventorySync');
 // Get admin dashboard statistics
 exports.getDashboardStats = async (req, res) => {
   try {
-    const actorScope = scopeQueryForActor(req.user);
-    const totalProducts = await Product.countDocuments(actorScope);
-    const totalOrders = await Order.countDocuments(actorScope);
+    let actorScope = scopeQueryForActor(req.user);
+    let vendorProductScope = { ...actorScope };
+    let vendorOrderScope = { ...actorScope };
+    
+    if (req.user.role === 'vendor_owner' || req.user.role === 'vendor_staff') {
+      vendorProductScope.seller = req.user._id;
+      vendorOrderScope['orderItems.seller'] = req.user._id;
+    }
+
+    const totalProducts = await Product.countDocuments(vendorProductScope);
+    
+    // For vendors, we only count orders that contain their items
+    const totalOrders = await Order.countDocuments(vendorOrderScope);
     
     // Users count (admins see all, org owners see their staff/users only)
     let userQuery = { role: 'user' };
@@ -28,41 +38,51 @@ exports.getDashboardStats = async (req, res) => {
     }
     const totalUsers = await User.countDocuments(userQuery);
     
-    // Revenue calculations
+    // Revenue calculations (vendors only see revenue from their items)
     const orders = await Order.find({
-      ...actorScope,
+      ...vendorOrderScope,
       'paymentInfo.status': 'paid'
-    });
-    const totalRevenue = orders.reduce((sum, order) => sum + order.totalPrice, 0);
+    }).lean();
+    
+    let totalRevenue = 0;
+    if (req.user.role === 'vendor_owner' || req.user.role === 'vendor_staff') {
+      orders.forEach(order => {
+        const vendorItems = order.orderItems.filter(i => i.seller && i.seller.toString() === req.user._id.toString());
+        totalRevenue += vendorItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+      });
+    } else {
+      totalRevenue = orders.reduce((sum, order) => sum + order.totalPrice, 0);
+    }
     
     // Today's stats
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
     const todayOrders = await Order.countDocuments({
-      ...actorScope,
+      ...vendorOrderScope,
       createdAt: { $gte: today }
     });
     
-    const todayRevenue = await Order.aggregate([
-      {
-        $match: {
-          ...actorScope,
-          createdAt: { $gte: today },
-          'paymentInfo.status': 'paid'
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: '$totalPrice' }
-        }
-      }
-    ]);
+    // Simplified today revenue for now (or calculate similarly)
+    const todayOrdersDocs = await Order.find({
+      ...vendorOrderScope,
+      createdAt: { $gte: today },
+      'paymentInfo.status': 'paid'
+    }).lean();
+    
+    let todayRevenue = 0;
+    if (req.user.role === 'vendor_owner' || req.user.role === 'vendor_staff') {
+      todayOrdersDocs.forEach(order => {
+        const vendorItems = order.orderItems.filter(i => i.seller && i.seller.toString() === req.user._id.toString());
+        todayRevenue += vendorItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+      });
+    } else {
+      todayRevenue = todayOrdersDocs.reduce((sum, order) => sum + order.totalPrice, 0);
+    }
     
     // Low stock products
     const lowStockProducts = await Product.find({
-      ...actorScope,
+      ...vendorProductScope,
       stock: { $lt: 10 }
     })
       .select('name stock')
@@ -228,6 +248,11 @@ exports.getAllProductsAdmin = async (req, res) => {
     if (stock === 'out') query.stock = 0;
     if (active !== undefined) query.isActive = active === 'true';
     
+    // Multi-Vendor Isolation
+    if (req.user.role === 'vendor_owner' || req.user.role === 'vendor_staff') {
+      query.seller = req.user._id;
+    }
+    
     const products = await Product.find(query).sort({ createdAt: -1 });
     
     res.status(200).json({
@@ -364,10 +389,28 @@ exports.getAllOrdersAdmin = async (req, res) => {
       query.user = { $in: users.map(u => u._id) };
     }
     
-    const orders = await Order.find(query)
+    // Multi-vendor Isolation for Orders
+    if (req.user.role === 'vendor_owner' || req.user.role === 'vendor_staff') {
+      query['orderItems.seller'] = req.user._id;
+    }
+    
+    let orders = await Order.find(query)
       .populate('user', 'name email phone')
       .populate('orderItems.product', 'name images')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+      
+    // If vendor, only show their own items from the mixed orders
+    if (req.user.role === 'vendor_owner' || req.user.role === 'vendor_staff') {
+      orders = orders.map(order => {
+        order.orderItems = order.orderItems.filter(item => 
+          item.seller && item.seller.toString() === req.user._id.toString()
+        );
+        // Recalculate totals for this vendor
+        order.totalPrice = order.orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        return order;
+      });
+    }
     
     res.status(200).json({
       success: true,
@@ -1293,3 +1336,422 @@ exports.inspectReturnedItem = async (req, res) => {
     });
   }
 };
+
+// ==================== SELLER MANAGEMENT (ADMIN ONLY) ====================
+
+// @desc    Get all sellers / applications
+// @route   GET /api/v1/admin/sellers
+// @access  Private (Admin/Platform Admin)
+exports.getAllSellers = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const query = {};
+    
+    if (status) {
+      query.sellerStatus = status;
+    } else {
+      query.sellerStatus = { $ne: 'none' };
+    }
+
+    const sellers = await User.find(query).select('-password');
+
+    res.status(200).json({
+      success: true,
+      count: sellers.length,
+      sellers
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// ==================== SELLER KYC PIPELINE ====================
+
+// @desc    Admin initiates KYC review for a pending seller
+// @route   PUT /api/v1/admin/seller/:id/kyc/initiate
+// @access  Private (Admin/Platform Admin)
+exports.initiateKYC = async (req, res) => {
+  try {
+    const seller = await User.findById(req.params.id);
+    if (!seller) return res.status(404).json({ success: false, message: 'Seller not found.' });
+
+    if (seller.sellerStatus !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot initiate KYC. Current status is '${seller.sellerStatus}'. Must be 'pending'.`
+      });
+    }
+
+    seller.sellerStatus = 'kyc_in_progress';
+    seller.sellerProfile.kycStartedAt = new Date();
+    await seller.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'KYC review initiated. Seller has been notified.',
+      seller
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Admin approves or fails KYC for a seller in review
+// @route   PUT /api/v1/admin/seller/:id/kyc/complete
+// @access  Private (Admin/Platform Admin)
+exports.completeKYC = async (req, res) => {
+  try {
+    const { result, failedReason } = req.body; // result: 'approved' | 'failed'
+
+    if (!['approved', 'failed'].includes(result)) {
+      return res.status(400).json({ success: false, message: "result must be 'approved' or 'failed'." });
+    }
+
+    const seller = await User.findById(req.params.id);
+    if (!seller) return res.status(404).json({ success: false, message: 'Seller not found.' });
+
+    if (seller.sellerStatus !== 'kyc_in_progress') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot complete KYC. Current status is '${seller.sellerStatus}'. Must be 'kyc_in_progress'.`
+      });
+    }
+
+    if (result === 'approved') {
+      seller.sellerStatus = 'kyc_approved';
+      seller.sellerProfile.kycApprovedAt = new Date();
+      seller.sellerProfile.kycFailedReason = '';
+    } else {
+      seller.sellerStatus = 'kyc_failed';
+      seller.sellerProfile.kycFailedAt = new Date();
+      seller.sellerProfile.kycFailedReason = failedReason || 'KYC documents could not be verified.';
+    }
+
+    await seller.save();
+
+    res.status(200).json({
+      success: true,
+      message: result === 'approved'
+        ? 'KYC approved. Seller has been notified to set up payment gateway.'
+        : `KYC marked as failed. Seller notified: "${seller.sellerProfile.kycFailedReason}"`,
+      seller
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Admin final approval after payment gateway setup
+// @route   PUT /api/v1/admin/seller/:id/kyc/final-approve
+// @access  Private (Admin/Platform Admin)
+exports.finalApproveSeller = async (req, res) => {
+  try {
+    const { commissionRate = 10 } = req.body;
+
+    const seller = await User.findById(req.params.id);
+    if (!seller) return res.status(404).json({ success: false, message: 'Seller not found.' });
+
+    if (seller.sellerStatus !== 'payment_pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot final-approve. Current status is '${seller.sellerStatus}'. Must be 'payment_pending'.`
+      });
+    }
+
+    seller.sellerStatus = 'approved';
+    seller.sellerProfile.approvedAt = new Date();
+    seller.sellerProfile.commissionRate = Number(commissionRate);
+    seller.sellerProfile.rejectionReason = '';
+
+    if (seller.role === 'user' || seller.role === 'customer' || !seller.role) {
+      seller.role = 'vendor_owner';
+    }
+
+    const Organization = require('../models/Organization');
+    let org;
+    if (seller.organizationId) {
+      org = await Organization.findById(seller.organizationId);
+    }
+
+    if (!org) {
+      org = await Organization.create({
+        name: seller.sellerProfile.shopName || `${seller.name}'s Shop`,
+        description: seller.sellerProfile.shopDescription || '',
+        payoutAccount: {
+          bankName: seller.sellerProfile.bankDetails?.bankName || '',
+          accountNumber: seller.sellerProfile.bankDetails?.accountNumber || '',
+          ifscCode: seller.sellerProfile.bankDetails?.ifscCode || '',
+          accountHolderName: seller.sellerProfile.bankDetails?.accountHolderName || '',
+          upiId: seller.sellerProfile.bankDetails?.upiId || ''
+        },
+        commissionRate,
+        status: 'active',
+        tenantId: `tenant_${seller._id}`
+      });
+      seller.organizationId = org._id;
+      seller.tenantId = org.tenantId;
+    } else {
+      org.status = 'active';
+      org.commissionRate = commissionRate;
+      await org.save();
+    }
+
+    await seller.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Seller fully approved and onboarded successfully!',
+      seller
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Approve or Reject a Seller application
+// @route   PUT /api/v1/admin/seller/:id/status
+// @access  Private (Admin/Platform Admin)
+exports.updateSellerStatus = async (req, res) => {
+  try {
+    const { status, rejectionReason, commissionRate = 10 } = req.body;
+    
+    if (!['approved', 'rejected', 'suspended'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Choose approved, rejected, or suspended.'
+      });
+    }
+
+    const seller = await User.findById(req.params.id);
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        message: 'Seller not found.'
+      });
+    }
+
+    seller.sellerStatus = status;
+    
+    if (status === 'approved') {
+      seller.sellerProfile.approvedAt = new Date();
+      seller.sellerProfile.rejectionReason = '';
+      seller.sellerProfile.commissionRate = commissionRate;
+
+      // Import Organization model
+      const Organization = require('../models/Organization');
+
+      // Create Organization for the seller if they don't have one
+      let org;
+      if (seller.organizationId) {
+        org = await Organization.findById(seller.organizationId);
+      }
+
+      if (!org) {
+        org = await Organization.create({
+          name: seller.sellerProfile.shopName || `${seller.name}'s Shop`,
+          description: seller.sellerProfile.shopDescription || '',
+          payoutAccount: {
+            bankName: seller.sellerProfile.bankDetails?.bankName || '',
+            accountNumber: seller.sellerProfile.bankDetails?.accountNumber || '',
+            ifscCode: seller.sellerProfile.bankDetails?.ifscCode || '',
+            accountHolderName: seller.sellerProfile.bankDetails?.accountHolderName || '',
+            upiId: seller.sellerProfile.bankDetails?.upiId || ''
+          },
+          commissionRate: commissionRate,
+          status: 'active',
+          tenantId: `tenant_${seller._id}` // Scaffold unique tenant identifier
+        });
+
+        seller.organizationId = org._id;
+        seller.tenantId = org.tenantId;
+      } else {
+        org.status = 'active';
+        org.commissionRate = commissionRate;
+        await org.save();
+      }
+
+      // Sync user role (keep admin role privileges if already admin)
+      if (seller.role === 'user' || seller.role === 'customer' || !seller.role) {
+        seller.role = 'vendor_owner';
+      }
+    } else if (status === 'rejected') {
+      seller.sellerProfile.rejectedAt = new Date();
+      seller.sellerProfile.rejectionReason = rejectionReason || 'Information provided is incomplete or incorrect.';
+      
+      // If rejected, deactivate their organization if it exists
+      if (seller.organizationId) {
+        const Organization = require('../models/Organization');
+        await Organization.findByIdAndUpdate(seller.organizationId, { status: 'suspended' });
+      }
+    } else if (status === 'suspended') {
+      if (seller.organizationId) {
+        const Organization = require('../models/Organization');
+        await Organization.findByIdAndUpdate(seller.organizationId, { status: 'suspended' });
+      }
+    }
+
+    await seller.save();
+
+    await writeAuditLog({
+      req,
+      action: `SELLER_STATUS_${status.toUpperCase()}`,
+      targetModel: 'User',
+      targetId: seller._id,
+      newState: { sellerStatus: seller.sellerStatus, organizationId: seller.organizationId }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Seller status updated to ${status} successfully.`,
+      seller
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// @desc    Update Seller Details (Commission rate and Profile details)
+// @route   PUT /api/v1/admin/seller/:id/profile
+// @access  Private (Admin/Platform Admin)
+exports.updateSellerProfileAdmin = async (req, res) => {
+  try {
+    const { 
+      commissionRate, 
+      shopName, 
+      shopDescription, 
+      gstin, 
+      pan, 
+      bankDetails, 
+      businessAddress 
+    } = req.body;
+
+    const seller = await User.findById(req.params.id);
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        message: 'Seller not found.'
+      });
+    }
+
+    // Update User model fields
+    if (commissionRate !== undefined) seller.sellerProfile.commissionRate = Number(commissionRate);
+    if (shopName !== undefined) seller.sellerProfile.shopName = shopName;
+    if (shopDescription !== undefined) seller.sellerProfile.shopDescription = shopDescription;
+    if (gstin !== undefined) seller.sellerProfile.gstin = gstin;
+    if (pan !== undefined) seller.sellerProfile.pan = pan;
+    
+    if (bankDetails) {
+      seller.sellerProfile.bankDetails = {
+        bankName: bankDetails.bankName !== undefined ? bankDetails.bankName : (seller.sellerProfile.bankDetails?.bankName || ''),
+        accountNumber: bankDetails.accountNumber !== undefined ? bankDetails.accountNumber : (seller.sellerProfile.bankDetails?.accountNumber || ''),
+        ifscCode: bankDetails.ifscCode !== undefined ? bankDetails.ifscCode : (seller.sellerProfile.bankDetails?.ifscCode || ''),
+        accountHolderName: bankDetails.accountHolderName !== undefined ? bankDetails.accountHolderName : (seller.sellerProfile.bankDetails?.accountHolderName || ''),
+        upiId: bankDetails.upiId !== undefined ? bankDetails.upiId : (seller.sellerProfile.bankDetails?.upiId || '')
+      };
+    }
+
+    if (businessAddress) {
+      seller.sellerProfile.businessAddress = {
+        line1: businessAddress.line1 !== undefined ? businessAddress.line1 : (seller.sellerProfile.businessAddress?.line1 || ''),
+        line2: businessAddress.line2 !== undefined ? businessAddress.line2 : (seller.sellerProfile.businessAddress?.line2 || ''),
+        city: businessAddress.city !== undefined ? businessAddress.city : (seller.sellerProfile.businessAddress?.city || ''),
+        state: businessAddress.state !== undefined ? businessAddress.state : (seller.sellerProfile.businessAddress?.state || ''),
+        pincode: businessAddress.pincode !== undefined ? businessAddress.pincode : (seller.sellerProfile.businessAddress?.pincode || '')
+      };
+    }
+
+    // Save User
+    await seller.save();
+
+    // Sync with Organization model if exists
+    if (seller.organizationId) {
+      const Organization = require('../models/Organization');
+      const org = await Organization.findById(seller.organizationId);
+      if (org) {
+        if (shopName !== undefined) org.name = shopName;
+        if (shopDescription !== undefined) org.description = shopDescription;
+        if (commissionRate !== undefined) org.commissionRate = Number(commissionRate);
+        if (seller.sellerProfile.bankDetails) {
+          org.payoutAccount = {
+            bankName: seller.sellerProfile.bankDetails.bankName || '',
+            accountNumber: seller.sellerProfile.bankDetails.accountNumber || '',
+            ifscCode: seller.sellerProfile.bankDetails.ifscCode || '',
+            accountHolderName: seller.sellerProfile.bankDetails.accountHolderName || '',
+            upiId: seller.sellerProfile.bankDetails.upiId || ''
+          };
+        }
+        await org.save();
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Seller details updated successfully.',
+      seller
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// @desc    Approve or Reject a Wholesale buyer application
+// @route   PUT /api/v1/admin/wholesale/:id/status
+// @access  Private (Admin/Platform Admin)
+exports.updateWholesaleStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Choose approved or rejected.'
+      });
+    }
+
+    const buyer = await User.findById(req.params.id);
+    if (!buyer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Wholesale buyer not found.'
+      });
+    }
+
+    buyer.wholesaleStatus = status;
+    if (status === 'approved') {
+      buyer.isWholesale = true;
+      if (buyer.role === 'user' || buyer.role === 'customer' || !buyer.role) {
+        buyer.role = 'wholesale_buyer';
+      }
+      buyer.wholesaleProfile.approvedAt = new Date();
+    } else {
+      buyer.isWholesale = false;
+      if (buyer.role === 'wholesale_buyer') {
+        buyer.role = 'user';
+      }
+      buyer.wholesaleProfile.approvedAt = null;
+    }
+
+    await buyer.save();
+    
+    res.status(200).json({
+      success: true,
+      message: `Wholesale application ${status} successfully.`,
+      buyer
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+

@@ -8,11 +8,13 @@ const {
   validateCoupon,
   createCoupon,
   updateCoupon,
-  deleteCoupon
+  deleteCoupon,
+  getActiveCoupons
 } = require('../controllers/couponController');
 
 // Public routes
 router.post('/coupon/validate', validateCoupon);
+router.get('/coupons', getActiveCoupons);
 
 // Admin routes
 router.get('/admin/coupons', isAuthenticatedUser, authorizeRoles('admin'), getAllCoupons);

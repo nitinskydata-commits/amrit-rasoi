@@ -25,6 +25,11 @@ const advertisementSchema = new mongoose.Schema({
     enum: ['home-top', 'home-middle', 'home-sidebar', 'home-overlay', 'product-banner', 'checkout-banner', 'footer'],
     required: true
   },
+  theme: {
+    type: String,
+    enum: ['light', 'dark', 'minimal', 'accent'],
+    default: 'light'
+  },
   startDate: {
     type: Date,
     default: Date.now
